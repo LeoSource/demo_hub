@@ -1,5 +1,7 @@
 #include "robot_state.h"
 
+bool robot_state::_selftested = false;
+
 state_initial::state_initial()
 {
     _name = state_name::e_initial;
@@ -72,6 +74,9 @@ state_name state_enable::transition(const std::string& event)
 state_name state_enable::run()
 {
     std::cout<<"this is enable state"<<std::endl;
+    if(_selftested)
+        return goto_ready_state();
+        
     return _name;
 }
 
@@ -100,7 +105,6 @@ state_selftest::state_selftest()
 {
     _name = state_name::e_selftest;
     _count = 0;
-    _selftested = false;
     action_table action_config[] = 
     {
         {"stop",        static_cast<ptr_action>(&state_selftest::goto_error_state)},
@@ -124,9 +128,6 @@ state_name state_selftest::transition(const std::string& event)
 
 state_name state_selftest::run()
 {
-    if(_selftested)
-        return goto_ready_state();
-
     std::cout<<"this is selftest state"<<std::endl;
     _count++;
     if(_count==10)

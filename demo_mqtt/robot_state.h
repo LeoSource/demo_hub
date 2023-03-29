@@ -28,6 +28,7 @@ protected:
     std::map<std::string,ptr_action> _action_map;
     std::list<std::string> _action_list;
     state_name _name;
+    static bool _selftested;
 
     struct action_table
     {std::string action; ptr_action func;};
@@ -81,7 +82,6 @@ class state_selftest : public robot_state
 {
 private:
     int _count;
-    bool _selftested;
 public:
     state_selftest();
     ~state_selftest() = default;
