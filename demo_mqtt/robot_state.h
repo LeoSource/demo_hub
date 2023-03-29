@@ -1,3 +1,12 @@
+/**
+* @file		robot_state.h
+* @brief	list all fo robot states and how to transition between two of them
+* @version	1.0.0
+* @author	zxliao
+* @email	zhixiangleo@163.com
+* @date		2023/03/29
+**/
+
 #pragma once
 
 #include <string>
@@ -20,7 +29,7 @@ enum class state_name
 };
 
 
-///////////////////////////////////////////////////////////////////////
+/// @brief interface for robot state
 class robot_state
 {
 protected:
@@ -37,7 +46,7 @@ public:
     robot_state(/* args */) = default;
     ~robot_state() = default;
 
-    virtual state_name transition(const std::string& event) = 0;
+    state_name transition(const std::string& event);
 
     virtual state_name run() = 0;
 
@@ -45,14 +54,12 @@ public:
 };
 
 
-///////////////////////////////////////////////////////////////////////
+/// @brief initial robot state
 class state_initial : public robot_state
 {
 public:
     state_initial();
     ~state_initial() = default;
-
-    state_name transition(const std::string& event) override;
 
     state_name run() override;
 private:
@@ -61,14 +68,12 @@ private:
 };
 
 
-///////////////////////////////////////////////////////////////////////
+/// @brief enable robot state
 class state_enable : public robot_state
 {
 public:
     state_enable();
     ~state_enable() = default;
-
-    state_name transition(const std::string& event) override;
 
     state_name run() override;
 private:
@@ -79,7 +84,7 @@ private:
 };
 
 
-///////////////////////////////////////////////////////////////////////
+/// @brief selftest robot state
 class state_selftest : public robot_state
 {
 private:
@@ -88,8 +93,6 @@ public:
     state_selftest();
     ~state_selftest() = default;
 
-    state_name transition(const std::string& event) override;
-
     state_name run() override;
 private:
     state_name goto_ready_state();
@@ -97,14 +100,12 @@ private:
 };
 
 
-///////////////////////////////////////////////////////////////////////
+/// @brief ready robot state
 class state_ready : public robot_state
 {
 public:
     state_ready();
     ~state_ready() = default;
-
-    state_name transition(const std::string& event) override;
 
     state_name run() override;
 private:
@@ -113,7 +114,7 @@ private:
 };
 
 
-///////////////////////////////////////////////////////////////////////
+/// @brief motion robot state
 class state_motion : public robot_state
 {
 private:
@@ -122,8 +123,6 @@ public:
     state_motion();
     ~state_motion() = default;
 
-    state_name transition(const std::string& event) override;
-
     state_name run() override;
 private:
     state_name goto_ready_state();
@@ -131,14 +130,12 @@ private:
 };
 
 
-///////////////////////////////////////////////////////////////////////
+/// @brief error robot state
 class state_error : public robot_state
 {
 public:
     state_error();
     ~state_error() = default;
-
-    state_name transition(const std::string& event) override;
 
     state_name run() override;
 private:
@@ -146,7 +143,7 @@ private:
 };
 
 
-///////////////////////////////////////////////////////////////////////
+/// @brief control the state transition of robot
 class state_machine
 {
 private:

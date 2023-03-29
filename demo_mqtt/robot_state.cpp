@@ -2,6 +2,15 @@
 
 bool robot_state::_selftested = false;
 
+state_name robot_state::transition(const std::string& event)
+{
+    state_name res = state_name::e_none;
+    if(std::find(_action_list.begin(),_action_list.end(),event)!=_action_list.end())
+        res = (this->*_action_map[event])();
+    
+    return res;
+}
+
 state_name robot_state::get_name()
 {
     return _name;
@@ -21,15 +30,6 @@ state_initial::state_initial()
         _action_map[action_config[count].action] = action_config[count].func;
         _action_list.push_back(action_config[count].action);
     }
-}
-
-state_name state_initial::transition(const std::string& event)
-{
-    state_name res = state_name::e_none;
-    if(std::find(_action_list.begin(),_action_list.end(),event)!=_action_list.end())
-        res = (this->*_action_map[event])();
-    
-    return res;
 }
 
 state_name state_initial::run()
@@ -65,15 +65,6 @@ state_enable::state_enable()
         _action_map[action_config[count].action] = action_config[count].func;
         _action_list.push_back(action_config[count].action);
     }
-}
-
-state_name state_enable::transition(const std::string& event)
-{
-    state_name res = state_name::e_none;
-    if(std::find(_action_list.begin(),_action_list.end(),event)!=_action_list.end())
-        res = (this->*_action_map[event])();
-
-    return res;
 }
 
 state_name state_enable::run()
@@ -122,15 +113,6 @@ state_selftest::state_selftest()
     }
 }
 
-state_name state_selftest::transition(const std::string& event)
-{
-    state_name res = state_name::e_none;
-    if(std::find(_action_list.begin(),_action_list.end(),event)!=_action_list.end())
-        res = (this->*_action_map[event])();
-    
-    return res;
-}
-
 state_name state_selftest::run()
 {
     std::cout<<"this is selftest state"<<std::endl;
@@ -173,15 +155,6 @@ state_ready::state_ready()
     }
 }
 
-state_name state_ready::transition(const std::string& event)
-{
-    state_name res = state_name::e_none;
-    if(std::find(_action_list.begin(),_action_list.end(),event)!=_action_list.end())
-        res = (this->*_action_map[event])();
-    
-    return res;
-}
-
 state_name state_ready::run()
 {
     std::cout<<"this is ready state"<<std::endl;
@@ -214,15 +187,6 @@ state_motion::state_motion()
         _action_map[action_config[count].action] = action_config[count].func;
         _action_list.push_back(action_config[count].action);
     }
-}
-
-state_name state_motion::transition(const std::string& event)
-{
-    state_name res = state_name::e_none;
-    if(std::find(_action_list.begin(),_action_list.end(),event)!=_action_list.end())
-        res = (this->*_action_map[event])();
-    
-    return res;
 }
 
 state_name state_motion::run()
@@ -264,15 +228,6 @@ state_error::state_error()
     }
 }
 
-state_name state_error::transition(const std::string& event)
-{
-    state_name res = state_name::e_none;
-    if(std::find(_action_list.begin(),_action_list.end(),event)!=_action_list.end())
-        res = (this->*_action_map[event])();
-    
-    return res;
-}
-
 state_name state_error::run()
 {
     std::cout<<"this is error state"<<std::endl;
@@ -283,6 +238,7 @@ state_name state_error::goto_initial_state()
 {
     return state_name::e_initial;
 }
+
 
 ///////////////////////////////////////////////////////////////////////
 state_machine::state_machine()
