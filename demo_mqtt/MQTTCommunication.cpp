@@ -75,6 +75,12 @@ void callback::message_arrived(mqtt::const_message_ptr msg)
     // std::cout<<_jpos[4]<<std::endl;
     // std::cout<<_jpos[5]<<std::endl;
     std::cout << "\tpayload: '" << msg->to_string() << "'\n" << std::endl;    
-    _rsm->handle_event(json_str.at("name"));
+    if(_rsm->handle_event(json_str.at("name")))
+        std::cout<<"action "<<json_str.at("name")<<" has been executed"<<std::endl;
+    else
+        // std::cout<<static_cast<typename std::underlying_type<state_name>::type>(_rsm->get_cur_state_name())<<std::endl;
+        std::cout<<"current state "<<
+            static_cast<typename std::underlying_type<state_name>::type>(_rsm->get_cur_state_name())
+            <<" cannot be response for action: "<<json_str.at("name")<<std::endl;
 }
 

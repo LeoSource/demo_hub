@@ -2,6 +2,11 @@
 
 bool robot_state::_selftested = false;
 
+state_name robot_state::get_name()
+{
+    return _name;
+}
+
 state_initial::state_initial()
 {
     _name = state_name::e_initial;
@@ -318,4 +323,9 @@ void state_machine::run()
 {
     auto next_state = _cur_state->run();
     _cur_state = _state_map[next_state];
+}
+
+state_name state_machine::get_cur_state_name()
+{
+    return _cur_state->get_name();
 }

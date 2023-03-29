@@ -40,6 +40,8 @@ public:
     virtual state_name transition(const std::string& event) = 0;
 
     virtual state_name run() = 0;
+
+    state_name get_name();
 };
 
 
@@ -158,4 +160,5 @@ public:
 
     void run();
 
+    state_name get_cur_state_name();
 };

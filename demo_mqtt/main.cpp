@@ -3,6 +3,15 @@
 
 int main(int argc, char* argv[])
 {
+    std::string arr[] = {"apple", "banana", "orange", "grape"};
+    std::string target = "banana";
+    auto it = std::find(std::begin(arr), std::end(arr), target);
+    if (it != std::end(arr))
+        std::cout << "Found " << target << " in the array." << std::endl;
+    else
+        std::cout << "Did not find " << target << " in the array." << std::endl;
+
+
 	state_machine rsm;
 
 	mqtt::async_client cli(SERVER_ADDRESS,CLIENT_ID);
