@@ -75,5 +75,6 @@ void callback::message_arrived(mqtt::const_message_ptr msg)
     // std::cout<<_jpos[4]<<std::endl;
     // std::cout<<_jpos[5]<<std::endl;
     std::cout << "\tpayload: '" << msg->to_string() << "'\n" << std::endl;    
+    _rsm->handle_event(json_str.at("name"));
 }
 

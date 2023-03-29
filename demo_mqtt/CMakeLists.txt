@@ -11,14 +11,15 @@ set(CMAKE_BUILD_TYPE "Release")
 message(${CMAKE_CROSSCOMPILING})
 
 if(${CMAKE_CROSSCOMPILING})
-include_directories(${PROJECT_SOURCE_DIR}/include)
-include_directories(${PROJECT_SOURCE_DIR}/include/mqtt)
-link_directories(${PROJECT_SOURCE_DIR}/lib)
+    include_directories(${PROJECT_SOURCE_DIR}/include)
+    include_directories(${PROJECT_SOURCE_DIR}/include/mqtt)
+    link_directories(${PROJECT_SOURCE_DIR}/lib)
 else()
-include_directories("/usr/local/include")
-link_directories("/usr/local/lib")
+    include_directories("/usr/local/include")
+    link_directories("/usr/local/lib")
 endif()
-add_executable(mqtt_test main.cpp MQTTCommunication.cpp)
+
+add_executable(mqtt_test main.cpp MQTTCommunication.cpp robot_state.cpp)
 target_link_libraries(mqtt_test paho-mqttpp3
                                 paho-mqtt3a 
                                 paho-mqtt3c)

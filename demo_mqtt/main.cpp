@@ -1,21 +1,39 @@
 #include "MQTTCommunication.h"
+#include <unistd.h>
 
 int main(int argc, char* argv[])
 {
+	state_machine rsm;
 
 	mqtt::async_client cli(SERVER_ADDRESS,CLIENT_ID);
 
-	mqtt::connect_options connOpts;
-	connOpts.set_clean_session(false);
+    auto connOpts = mqtt::connect_options_builder()
+                    .clean_session(true)
+                    .automatic_reconnect(std::chrono::seconds(3), std::chrono::seconds(10))
+                    .finalize();
 
-	callback cb(cli,connOpts);
+	callback cb(cli,connOpts,&rsm);
 	cli.set_callback(cb);
+	cli.connect(connOpts,nullptr,cb);
+    while(!cli.is_connected())
+    {
+        try
+        {
+            std::this_thread::sleep_for(std::chrono::seconds(3));
+        }
+        catch(const mqtt::exception& exc)
+        {
+            std::cout<<exc.what()<<std::endl;
+        }
+    }
 
-	// MQTTTransition mqtt_trans(cli,connOpts,cb);
-	// mqtt_trans.Connect();
+	while(true)
+	{
+		rsm.run();
+		sleep(1);
+	}
 
-	while(std::tolower(std::cin.get())!='q');
+	// while(std::tolower(std::cin.get())!='q');
 
-	// mqtt_trans.DisConnect();
 
 }
