@@ -1,0 +1,10 @@
+demo_mqtt/build/
+demo_mqtt/.vscode/
+
+demo_spdlog/build/
+demo_spdlog/.vscode/
+
+demo_totg/build/
+
+demo_yaml/build/
+demo_yaml/.vscode/
