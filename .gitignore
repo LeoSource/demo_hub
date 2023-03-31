@@ -14,3 +14,5 @@ demo_Eigen/.vscode/
 
 demo_cpp_tips/build/
 demo_cpp_tips/.vscode/
+
+demo_python/__pycache__
