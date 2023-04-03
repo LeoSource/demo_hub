@@ -1,11 +1,10 @@
+# !/bin/python3
 import time
 import random
 import json
 from laser_rangefinder import laser_rangefinder
 from protractor import protractor
 from paho.mqtt import client as mqtt_client
-
-
 
 class robot_test(object):
     def __init__(self) -> None:
@@ -42,7 +41,6 @@ class robot_test(object):
         self.joint_position = json_data['position_joint']
 
     def test_joint_range(self,jidx):
-        # joint_limit = [0.15]
         self.client.loop_start()
         time.sleep(3)
         lr = laser_rangefinder()
@@ -64,6 +62,7 @@ class robot_test(object):
         while self.robot_state!=10:
             time.sleep(0.1)
         limit_neg = lr.read_sensor_value()
+        limit_neg_encoder = 1000*self.joint_position[jidx]
 
         pub_data = {'name':'stop'}
         self.client.publish(self.pub_topic,payload=json.dumps(pub_data))
@@ -88,6 +87,7 @@ class robot_test(object):
         while self.robot_state!=10:
             time.sleep(0.1)
         limit_pos = lr.read_sensor_value()
+        limit_pos_encoder = 1000*self.joint_position[jidx]
         
         pub_data = {'name':'stop'}
         self.client.publish(self.pub_topic,payload=json.dumps(pub_data))
@@ -111,25 +111,58 @@ class robot_test(object):
         while self.robot_state!=10:
             time.sleep(0.1)
         print('complete range test for joint ',jidx)
-        print('the range of joint is ',abs(limit_pos-limit_neg))
+        print('the range of joint is %.3f mm' %abs(limit_pos-limit_neg))
+        print('the range of joint is %.3f mm' %abs(limit_pos_encoder-limit_neg_encoder))
         
 
     def test_joint_accuracy(self):
         pass
 
-    def test_joint_repeatability(self):
-        pass
+    def test_joint_repeatability(self,jidx):
+        self.client.loop_start()
+        time.sleep(3)
+        # lr = laser_rangefinder()
+        while self.robot_state!=10:
+            time.sleep(1)
+            print('robot state: ',self.robot_state)
+            print('robot is not ready for test')
+        print('robot is ready for test')
+        
+        joint_mark = [0.02,0.04,0.06] if jidx in [0,1] else [-10,0,10]
+        joint_record = []
+        joint_record_encoder = []
+        for idx_test in range(10):
+            jp = []
+            jpl = []
+            for position_target in joint_mark:
+                pub_data = {'name':'motion',
+                            'part':'slave',
+                            'pos':[[0,0,0,0,0]],
+                            'type':'joint',
+                            'mode':'relative'}
+                pub_data['pos'][0][jidx] = position_target-self.joint_position[jidx]
+                self.client.publish(self.pub_topic,payload=json.dumps(pub_data))
+                time.sleep(2)
+                while self.robot_state!=10:
+                    time.sleep(0.1)
+                jp.append(self.joint_position[jidx])
+                # jpl.append(lr.read_sensor_value())
+            # joint_record.append(jpl)
+            joint_record_encoder.append(jp)
+
+        rp = []
+        for mark_idx in range(len(joint_mark)):
+            jp = [joint_record_encoder[idx][mark_idx] for idx in range(len(joint_record_encoder))]
+            rp.append(sum(jp)/len(jp)-joint_mark[mark_idx])
+
+        unit = 'mm' if jidx in [0,1] else '1e-3 degree'
+        print('the repeatability of joint %d is %.7f %s' %(jidx,1000*sum(rp)/len(rp),unit))
+
 
 
 if __name__=='__main__':
     rt = robot_test()
-    rt.test_joint_range(0)
+    # rt.test_joint_range(1)
+    rt.test_joint_repeatability(0)
 
-    # ptr = protractor()
-    # lr = laser_rangefinder()
-    # while True:
-    #     distance = lr.read_sensor_value()
-    #     angle = ptr.read_sensor_value()
-    #     print(distance)
-    #     print(angle)
-    #     time.sleep(1)
+
