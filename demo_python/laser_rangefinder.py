@@ -44,6 +44,7 @@ class laser_rangefinder(object):
             print('字符间隔超时：',self.ser.interCharTimeout)
         except Exception as e:
             print("---error---: ",e)
+            raise Exception(e)
         self.stx = b'\x02'
         self.etx = b'\x03'
         self.ack = b'\x06'

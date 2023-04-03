@@ -115,8 +115,41 @@ class robot_test(object):
         print('the range of joint is %.3f mm' %abs(limit_pos_encoder-limit_neg_encoder))
         
 
-    def test_joint_accuracy(self):
-        pass
+    def test_joint_accuracy(self,jidx):
+        self.client.loop_start()
+        time.sleep(3)
+        while self.robot_state!=10:
+            time.sleep(1)
+            print('robot state: ',self.robot_state)
+            print('robot is not ready for test')
+        print('robot is ready for test')
+
+        joint_mark = [0.02,0.04,0.06] if jidx in [0,1] else [-10,0,10]
+        joint_record = []
+        for idx_test in range(10):
+            jp = []
+            for position_target in joint_mark:
+                pub_data = {'name':'motion',
+                            'part':'slave',
+                            'pos':[[0,0,0,0,0]],
+                            'type':'joint',
+                            'mode':'relative'}
+                pub_data['pos'][0][jidx] = position_target-self.joint_position[jidx]
+                self.client.publish(self.pub_topic,payload=json.dumps(pub_data))
+                time.sleep(2)
+                while self.robot_state!=10:
+                    time.sleep(0.1)
+                jp.append(self.joint_position[jidx])
+            joint_record.append(jp)
+
+        jp = []
+        for idx in range(len(joint_record)):
+            jp_tmp = [joint_record[idx][mark_idx+1]-joint_record[idx][mark_idx] for mark_idx in range(len(joint_mark)-1)]
+            jp.append(sum(jp_tmp)/len(jp_tmp))
+
+        unit = 'mm' if jidx in [0,1] else '1e-3 degree'
+        print('the accuracy of joint %d is %.7f %s' %(jidx,1000*(sum(jp)/len(jp)-abs(joint_mark[1]-joint_mark[0])),unit))
+
 
     def test_joint_repeatability(self,jidx):
         self.client.loop_start()
@@ -163,6 +196,7 @@ class robot_test(object):
 if __name__=='__main__':
     rt = robot_test()
     # rt.test_joint_range(1)
-    rt.test_joint_repeatability(0)
+    # rt.test_joint_repeatability(1)
+    rt.test_joint_accuracy(2)
 
 
