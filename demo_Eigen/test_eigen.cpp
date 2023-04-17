@@ -33,6 +33,13 @@ namespace test_eigen
         //eigenVec2vector();
 
         test_random_matrix();
+
+        Eigen::RowVectorXd p = Eigen::VectorXd::Zero(3);
+        Eigen::VectorXd q = Eigen::VectorXd::Zero(3);
+        p<<1,2,3;
+        q<<3,2,1;
+        auto r = p*q;
+        std::cout<<r<<std::endl;
     }
 
     void array2eigenMat()
