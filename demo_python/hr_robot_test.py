@@ -110,61 +110,27 @@ class robot_test(object):
         self.client.publish(self.pub_topic,payload=json.dumps(pub_data))
         while self.robot_state!=10:
             time.sleep(0.1)
+        time.sleep(1)
         print('complete range test for joint ',jidx)
-        print('the range of joint is %.3f mm' %abs(limit_pos-limit_neg))
-        print('the range of joint is %.3f mm' %abs(limit_pos_encoder-limit_neg_encoder))
+        print('the range(laser) of joint is %.3f mm' %abs(limit_pos-limit_neg))
+        print('the range(encoder) of joint is %.3f mm' %abs(limit_pos_encoder-limit_neg_encoder))
+        self.client.loop_stop()
         
 
     def test_joint_accuracy(self,jidx):
         self.client.loop_start()
         time.sleep(3)
+        lr = laser_rangefinder()
         while self.robot_state!=10:
             time.sleep(1)
             print('robot state: ',self.robot_state)
             print('robot is not ready for test')
         print('robot is ready for test')
 
-        joint_mark = [0.02,0.04,0.06] if jidx in [0,1] else [-10,0,10]
-        joint_record = []
-        for idx_test in range(10):
-            jp = []
-            for position_target in joint_mark:
-                pub_data = {'name':'motion',
-                            'part':'slave',
-                            'pos':[[0,0,0,0,0]],
-                            'type':'joint',
-                            'mode':'relative'}
-                pub_data['pos'][0][jidx] = position_target-self.joint_position[jidx]
-                self.client.publish(self.pub_topic,payload=json.dumps(pub_data))
-                time.sleep(2)
-                while self.robot_state!=10:
-                    time.sleep(0.1)
-                jp.append(self.joint_position[jidx])
-            joint_record.append(jp)
-
-        jp = []
-        for idx in range(len(joint_record)):
-            jp_tmp = [joint_record[idx][mark_idx+1]-joint_record[idx][mark_idx] for mark_idx in range(len(joint_mark)-1)]
-            jp.append(sum(jp_tmp)/len(jp_tmp))
-
-        unit = 'mm' if jidx in [0,1] else '1e-3 degree'
-        print('the accuracy of joint %d is %.7f %s' %(jidx,1000*(sum(jp)/len(jp)-abs(joint_mark[1]-joint_mark[0])),unit))
-
-
-    def test_joint_repeatability(self,jidx):
-        self.client.loop_start()
-        time.sleep(3)
-        # lr = laser_rangefinder()
-        while self.robot_state!=10:
-            time.sleep(1)
-            print('robot state: ',self.robot_state)
-            print('robot is not ready for test')
-        print('robot is ready for test')
-        
         joint_mark = [0.02,0.04,0.06] if jidx in [0,1] else [-10,0,10]
         joint_record = []
         joint_record_encoder = []
-        for idx_test in range(10):
+        for idx_test in range(8):
             jp = []
             jpl = []
             for position_target in joint_mark:
@@ -178,25 +144,80 @@ class robot_test(object):
                 time.sleep(2)
                 while self.robot_state!=10:
                     time.sleep(0.1)
+                time.sleep(1)
                 jp.append(self.joint_position[jidx])
-                # jpl.append(lr.read_sensor_value())
-            # joint_record.append(jpl)
+                jpl.append(lr.read_sensor_value())
+            joint_record_encoder.append(jp)
+            joint_record.append(jpl)
+
+        jp = []
+        jp_encoder = []
+        for idx in range(len(joint_record_encoder)):
+            jp_tmp = [joint_record[idx][mark_idx+1]-joint_record[idx][mark_idx] for mark_idx in range(len(joint_mark)-1)]
+            jp.append(sum(jp_tmp)/len(jp_tmp))
+            jp_tmp = [joint_record_encoder[idx][mark_idx+1]-joint_record_encoder[idx][mark_idx] for mark_idx in range(len(joint_mark)-1)]
+            jp_encoder.append(sum(jp_tmp)/len(jp_tmp))
+
+        unit = 'mm' if jidx in [0,1] else '1e-3 degree'
+        print('the accuracy(laser) of joint %d is %.7f %s' %(jidx,abs(sum(jp)/len(jp))-1000*abs(joint_mark[1]-joint_mark[0]),unit))
+        print('the accuracy(encoder) of joint %d is %.7f %s' %(jidx,abs(sum(jp_encoder)/len(jp_encoder))-abs(joint_mark[1]-joint_mark[0]),unit))
+        self.client.loop_stop()
+
+
+    def test_joint_repeatability(self,jidx):
+        self.client.loop_start()
+        time.sleep(3)
+        lr = laser_rangefinder()
+        while self.robot_state!=10:
+            time.sleep(1)
+            print('robot state: ',self.robot_state)
+            print('robot is not ready for test')
+        print('robot is ready for test')
+        
+        joint_mark = [0.02,0.04,0.06] if jidx in [0,1] else [-10,0,10]
+        joint_record = []
+        joint_record_encoder = []
+        for idx_test in range(5):
+            jp = []
+            jpl = []
+            for position_target in joint_mark:
+                pub_data = {'name':'motion',
+                            'part':'slave',
+                            'pos':[[0,0,0,0,0]],
+                            'type':'joint',
+                            'mode':'relative'}
+                pub_data['pos'][0][jidx] = position_target-self.joint_position[jidx]
+                self.client.publish(self.pub_topic,payload=json.dumps(pub_data))
+                time.sleep(2)
+                while self.robot_state!=10:
+                    time.sleep(0.1)
+                time.sleep(1)
+                jp.append(self.joint_position[jidx])
+                jpl.append(lr.read_sensor_value())
+            joint_record.append(jpl)
             joint_record_encoder.append(jp)
 
         rp = []
+        rp_encoder = []
         for mark_idx in range(len(joint_mark)):
-            jp = [joint_record_encoder[idx][mark_idx] for idx in range(len(joint_record_encoder))]
-            rp.append(sum(jp)/len(jp)-joint_mark[mark_idx])
+            jp_encoder = [joint_record_encoder[idx][mark_idx] for idx in range(len(joint_record_encoder))]
+            jp = [joint_record[idx][mark_idx] for idx in range(len(joint_record))]
+            # print(jp)
+            # print(jp_encoder)
+            rp.append(max(jp)-sum(jp)/len(jp))
+            rp_encoder.append(max(jp_encoder)-sum(jp_encoder)/len(jp_encoder))
 
         unit = 'mm' if jidx in [0,1] else '1e-3 degree'
-        print('the repeatability of joint %d is %.7f %s' %(jidx,1000*sum(rp)/len(rp),unit))
+        print('the repeatability(laesr) of joint %d is %.7f %s' %(jidx,sum(rp)/len(rp),unit))
+        print('the repeatability(encoder) of joint %d is %.7f %s' %(jidx,1000*sum(rp_encoder)/len(rp_encoder),unit))
+        self.client.loop_stop()
 
 
 
 if __name__=='__main__':
     rt = robot_test()
-    # rt.test_joint_range(1)
-    # rt.test_joint_repeatability(1)
-    rt.test_joint_accuracy(2)
+    rt.test_joint_range(0)
+    rt.test_joint_repeatability(0)
+    rt.test_joint_accuracy(0)
 
 
