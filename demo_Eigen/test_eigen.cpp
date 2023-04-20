@@ -93,6 +93,26 @@ namespace test_eigen
         std::cout<<parse_via_pos(pos_fdb,true)<<std::endl;
     }
 
+    void test_eigen_error()
+    {
+        try
+        {
+            Eigen::VectorXd q = Eigen::VectorXd::Ones(3);
+            Eigen::Vector2d mat;
+            mat<<1,2,3,4;
+            // Eigen::MatrixXd res = q*mat;
+            Eigen::MatrixXd res1 = mat*q;
+            std::cout<<res1<<std::endl;
+            q(4) = 5;
+            std::cout<<q(3)<<std::endl;
+        }
+        catch(const std::exception& e)
+        {
+            std::cout << e.what() << '\n';
+        }
+        
+    }
+
     void array2eigenMat()
     {
         cout << "-------------------------- array2eigenMat  --------------------------" << endl;

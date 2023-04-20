@@ -1,8 +1,12 @@
 #pragma once
 
+#define EIGEN_NO_DEBUG
+
 #include <iostream>
 #include <vector>
 #include <Eigen/Dense>
+#include <thread>
+#include <chrono>
 
 using namespace std;
 using namespace Eigen;
@@ -29,6 +33,8 @@ namespace test_eigen
 	void test_eigen();
 
 	void test_lambda();
+
+	void test_eigen_error();
 }
 
 

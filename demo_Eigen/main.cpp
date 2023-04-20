@@ -17,6 +17,11 @@ int main(int, char**)
     //eigenVec2vector();
 
     // test_eigen::test_eigen();
-
-    test_eigen::test_lambda();
+    // test_eigen::test_lambda();
+    test_eigen::test_eigen_error();
+    while (true)
+    {
+        std::this_thread::sleep_for(std::chrono::microseconds(500));
+    }
+    
 }
