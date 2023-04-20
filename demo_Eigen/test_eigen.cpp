@@ -2,6 +2,9 @@
 #include "test_eigen.h"
 #include <random>
 #include "float.h"
+#include "json.hpp"
+
+using nlohmann::json;
 
 namespace test_eigen
 {
@@ -40,6 +43,54 @@ namespace test_eigen
         q<<3,2,1;
         auto r = p*q;
         std::cout<<r<<std::endl;
+    }
+
+    void test_lambda()
+    {
+        json j = {
+            {"name", "stop"},
+            {"part", "master"},
+            {"pos", {{-20.0,30, -0.04}}},
+            {"type", "joint"},
+            {"mode", "relative"}
+        };
+        auto parse_via_pos = [j](const Eigen::VectorXd& pos_fdb,bool joint_type) -> Eigen::MatrixXd
+        {
+            std::vector<std::vector<double>> pos_vec = j.at("pos");
+            int rows = pos_vec[0].size();
+            Eigen::VectorXd pos_delta = pos_fdb;
+            Eigen::MatrixXd via_pos(rows,pos_vec.size());
+            std::cout<<"rows: "<<rows<<std::endl;
+            for(int idx=0;idx<pos_vec.size();idx++)
+            {
+                Eigen::VectorXd pos_tmp;
+                Eigen::Vector2d pos_vec_tmp;
+                if(rows==2)
+                {
+                    pos_tmp.setZero(3);
+                    for(int ridx=0;ridx<rows;ridx++)
+                        pos_vec_tmp(ridx) = pos_vec.at(idx).at(ridx);
+                    pos_tmp << pos_vec_tmp, 0;
+                }
+                else
+                {
+                    pos_tmp.setZero(rows);
+                    for(int ridx=0;ridx<rows;ridx++)
+                        pos_tmp(ridx) = pos_vec.at(idx).at(ridx);
+                }
+                if(joint_type)
+                {
+                    pos_tmp(rows-3) *= D2R;
+                    pos_tmp(rows-2) *= D2R;
+                }
+                Eigen::VectorXd pos_ref = (j.at("mode")=="absolute")?(pos_tmp):(pos_tmp+pos_delta);
+                pos_delta += pos_tmp;
+                via_pos.col(idx) = pos_ref;
+            }
+            return via_pos;
+        };
+        Eigen::VectorXd pos_fdb = Eigen::VectorXd::Zero(3);
+        std::cout<<parse_via_pos(pos_fdb,true)<<std::endl;
     }
 
     void array2eigenMat()

@@ -7,6 +7,9 @@
 using namespace std;
 using namespace Eigen;
 
+#define D2R M_PI/180.0
+#define R2D 180.0/M_PI
+
 namespace test_eigen
 {
 	void array2eigenMat();
@@ -24,6 +27,8 @@ namespace test_eigen
 	void test_random_matrix();
 
 	void test_eigen();
+
+	void test_lambda();
 }
 
 

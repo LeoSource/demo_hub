@@ -16,5 +16,7 @@ int main(int, char**)
     //vector2eigenVec();
     //eigenVec2vector();
 
-    test_eigen::test_eigen();
+    // test_eigen::test_eigen();
+
+    test_eigen::test_lambda();
 }
