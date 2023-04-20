@@ -270,7 +270,7 @@ bool state_machine::handle_event(const std::string& event)
     {
         _cur_state = _state_map[next_state];
         return true;
-    }
+    } 
     else
         return false;
 }

@@ -12,6 +12,8 @@
 #endif
 #include <iostream>
 #include <random>
+#include <map>
+#include <vector>
 
 namespace test_other
 {
@@ -26,6 +28,8 @@ namespace test_other
 	void test_directory();
 
 	void test_random_number();
+
+	void test_fill();
 }
 
 

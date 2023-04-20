@@ -9,6 +9,22 @@ namespace test_other
         test_uint_convert();
 	}
 
+	void test_fill()
+	{
+		int aa[4];
+		std::fill(aa,aa+2,3);
+		std::fill(aa+2,aa+4,5);
+		for(int idx=0;idx<4;idx++)
+			std::cout<<aa[idx]<<std::endl;
+
+		std::vector<double> vd(7);
+		for(auto it=vd.begin();it!=vd.end();it++)
+			std::cout<<*it<<std::endl;
+		std::fill(vd.begin(),vd.end(),5);
+		for(auto it=vd.begin();it!=vd.end();it++)
+			std::cout<<*it<<std::endl;
+	}
+
 	void test_time()
 	{
         time_t rawtime = time(nullptr);
