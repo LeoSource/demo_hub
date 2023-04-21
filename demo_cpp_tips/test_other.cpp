@@ -1,6 +1,8 @@
 #include "test_other.h"
 #include "float.h"
 
+#define NUM_MOTORS 8
+
 namespace test_other
 {
 	void test_other()
@@ -40,7 +42,7 @@ namespace test_other
 		// std::cout<<calc_rows("aaaa")<<std::endl;
 	}
 
-	void lambda_with_array_length()
+	void json_conversion()
 	{
 		json jn;
 		double array[]{3,2,1};
@@ -48,14 +50,16 @@ namespace test_other
 		jn["vel"] = array;
 		std::cout<<jn.at("pos")<<std::endl;
 		std::cout<<jn.at("vel")<<std::endl;
+	}
 
+	void bind_function()
+	{
 		json j = {
 			{"control_word",{1,1,1,1,1,1,1,1}},
 			{"control_mode",{8,8,8,8,8,8,8}},
 			{"cmd_vel",{1000,1000,1000,1000,1000,1000,1000,1000}}
 		};
-		int NUM_MOTORS = 8;
-		auto is_valid = [NUM_MOTORS,j](const std::string& cmd)->bool
+		auto is_valid = [j](const std::string& cmd)->bool
 		{
 			std::vector<int> value = j.at(cmd);
 			return value.size()==NUM_MOTORS?true:false;
@@ -63,9 +67,13 @@ namespace test_other
 		std::cout<<is_valid("control_word")<<std::endl;
 		std::cout<<is_valid("control_mode")<<std::endl;
 
+		using func_ptr = void (*)(int);
+		auto f = std::bind<func_ptr>(tt_argumetes,std::placeholders::_1);
+		f(2);
+
 		std::cout<<std::endl<<std::endl;
 		test_class tclass;
-		auto execute_cmd = [NUM_MOTORS,j](const std::string& cmd,std::function<void(std::vector<int>)> execute)
+		auto execute_cmd = [j](const std::string& cmd,std::function<void(std::vector<int>)> execute)
 		{
 			std::vector<int> value = j.at(cmd);
 			if(value.size()==NUM_MOTORS)
@@ -73,7 +81,8 @@ namespace test_other
 			else
 				std::cout<<"input parameters is invalid"<<std::endl;
 		};
-		auto p = std::bind(&test_class::set_parameters,&tclass,std::placeholders::_1);
+		using mfunc_ptr = void(test_class::*)(std::vector<int>);
+		auto p = std::bind<void(test_class::*)(std::vector<int>)>(&test_class::set_parameters,&tclass,std::placeholders::_1);
 		execute_cmd("control_word",p);
 		execute_cmd("control_mode",p);
 		// is_valid("control_word");

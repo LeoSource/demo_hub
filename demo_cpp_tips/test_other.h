@@ -31,7 +31,11 @@ void test_directory();
 void test_random_number();
 void test_fill();
 void convert_string();
-void lambda_with_array_length();
+void json_conversion();
+void bind_function();
+
+inline void tt_argumetes(int a){std::cout<<"one argument"<<std::endl;}
+inline void tt_argumetes(int a,int b){std::cout<<"two arguments"<<std::endl;}
 
 class test_class
 {
@@ -41,6 +45,10 @@ public:
 	test_class(/* args */) = default;
 	~test_class() = default;
 	void set_parameters(std::vector<int> v)
+	{
+		std::cout<<"complete setting parameters"<<std::endl;
+	}
+	void set_parameters(int v)
 	{
 		std::cout<<"complete setting parameters"<<std::endl;
 	}
