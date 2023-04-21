@@ -4,6 +4,7 @@ project(demo_cpp_tips VERSION 0.1.0)
 include(CTest)
 enable_testing()
 
+set(CMAKE_CXX_FLAGS "-std=c++11")
 add_executable(demo_cpp_tips main.cpp test_other.cpp)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

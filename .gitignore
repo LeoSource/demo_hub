@@ -12,7 +12,6 @@ demo_yaml/.vscode/
 demo_Eigen/build/
 
 demo_cpp_tips/build/
-demo_cpp_tips/.vscode/
 
 demo_python/__pycache__
 demo_python/.vscode

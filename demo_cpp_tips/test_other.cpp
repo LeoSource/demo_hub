@@ -9,6 +9,76 @@ namespace test_other
         test_uint_convert();
 	}
 
+	void convert_string()
+	{
+		json j = {
+            {"name", "stop"},
+            {"part", "master"},
+            {"pos", {{-20.0,30, -0.04}}},
+            {"type", "fixed-base"},
+            {"mode", "relative"}
+        };
+		auto calc_rows = [](const std::string& type)->int
+		{
+			std::vector<std::string> type_name{"joint","vertex","fixed-base","fixed_orientation","fixed_rcm",
+				"direction_base","direction_rcm"};
+			int index = std::find(type_name.begin(),type_name.end(),type)-type_name.begin();
+			return index==type_name.size()?-1:(index==0?5:(index==1?2:3));
+		};
+		auto is_valid = [j](int rows) -> bool
+		{
+			bool is_valid = true;
+			std::vector<std::vector<double>> pos_vec = j.at("pos");
+			for(int idx=0;idx<pos_vec.size();idx++)
+				is_valid = is_valid && (pos_vec.at(idx).size()==rows);
+
+			return is_valid;
+		};
+		std::cout<<is_valid(calc_rows(j.at("type")))<<std::endl;
+		// std::cout<<calc_rows("vertex")<<std::endl;
+		// std::cout<<calc_rows("fixed-base")<<std::endl;
+		// std::cout<<calc_rows("aaaa")<<std::endl;
+	}
+
+	void lambda_with_array_length()
+	{
+		json jn;
+		double array[]{3,2,1};
+		jn["pos"] = std::vector<double>{1,2,3};
+		jn["vel"] = array;
+		std::cout<<jn.at("pos")<<std::endl;
+		std::cout<<jn.at("vel")<<std::endl;
+
+		json j = {
+			{"control_word",{1,1,1,1,1,1,1,1}},
+			{"control_mode",{8,8,8,8,8,8,8}},
+			{"cmd_vel",{1000,1000,1000,1000,1000,1000,1000,1000}}
+		};
+		int NUM_MOTORS = 8;
+		auto is_valid = [NUM_MOTORS,j](const std::string& cmd)->bool
+		{
+			std::vector<int> value = j.at(cmd);
+			return value.size()==NUM_MOTORS?true:false;
+		};
+		std::cout<<is_valid("control_word")<<std::endl;
+		std::cout<<is_valid("control_mode")<<std::endl;
+
+		std::cout<<std::endl<<std::endl;
+		test_class tclass;
+		auto execute_cmd = [NUM_MOTORS,j](const std::string& cmd,std::function<void(std::vector<int>)> execute)
+		{
+			std::vector<int> value = j.at(cmd);
+			if(value.size()==NUM_MOTORS)
+				execute(value);
+			else
+				std::cout<<"input parameters is invalid"<<std::endl;
+		};
+		auto p = std::bind(&test_class::set_parameters,&tclass,std::placeholders::_1);
+		execute_cmd("control_word",p);
+		execute_cmd("control_mode",p);
+		// is_valid("control_word");
+	}
+
 	void test_fill()
 	{
 		int aa[4];

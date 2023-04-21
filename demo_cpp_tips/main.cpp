@@ -3,5 +3,7 @@
 int main(int, char**)
 {
     // test_other::test_other();
-    test_other::test_fill();
+    // test_other::test_fill();
+    // test_other::convert_string();
+    test_other::lambda_with_array_length();
 }

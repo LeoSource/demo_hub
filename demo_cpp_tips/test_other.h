@@ -14,22 +14,39 @@
 #include <random>
 #include <map>
 #include <vector>
+#include <string>
+#include <algorithm>
+#include <functional>
+#include "json.hpp"
+
+using nlohmann::json;
 
 namespace test_other
 {
-	void test_other();
+void test_other();
+void test_time();
+void test_enable_logic();
+void test_uint_convert();
+void test_directory();
+void test_random_number();
+void test_fill();
+void convert_string();
+void lambda_with_array_length();
 
-	void test_time();
+class test_class
+{
+private:
+	/* data */
+public:
+	test_class(/* args */) = default;
+	~test_class() = default;
+	void set_parameters(std::vector<int> v)
+	{
+		std::cout<<"complete setting parameters"<<std::endl;
+	}
+};
 
-	void test_enable_logic();
-
-	void test_uint_convert();
-
-	void test_directory();
-
-	void test_random_number();
-
-	void test_fill();
+	
 }
 
 
