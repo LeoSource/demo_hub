@@ -67,8 +67,10 @@ class laser_rangefinder(object):
 
     def read_sensor_value(self):
         self.write_data(self.read_vaule_address,b'\xb0',b'\x01')
+        count = 0
         while not self.ser.in_waiting:
-            time.sleep(0.01)
+            time.sleep(0.001)
+            count = count+1
         rec_data = self.ser.readline()
         res = int.from_bytes(rec_data[2:4],'big')
         if res>32768:

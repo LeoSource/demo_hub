@@ -1,4 +1,6 @@
 # !/bin/python3
+from threading import Thread
+import csv
 import time
 import random
 import json
@@ -15,6 +17,7 @@ class robot_test(object):
         self.pub_topic = 'hr_robot'
         time.sleep(0.5)
         self.lr = laser_rangefinder()
+        self.record_button = True
 
     def config_mqtt(self):
         client_id = f'python-mqtt-{random.randint(0,1000)}'
@@ -42,7 +45,23 @@ class robot_test(object):
         self.robot_state = json_data['robot_state']
         self.joint_position = json_data['position_joint']
 
-    def test_joint_range(self,jidx):
+    def record_laser(self,filename):
+        with open(filename, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            t0 = time.time()
+            self.laser_data = []
+            while self.record_button:
+                pos = self.lr.read_sensor_value()
+                timestamp = time.time()-t0
+                self.laser_data.append([timestamp,pos])
+                # writer.writerow([timestamp,pos])
+                # print([timestamp,pos])
+                time.sleep(0.001)
+            writer.writerows(self.laser_data)
+            csvfile.close()
+        print('complete save laser data to file')
+
+    def joint_range(self,jidx):
         self.client.loop_start()
         time.sleep(3)
         print('start range test for joint ',jidx)
@@ -120,7 +139,7 @@ class robot_test(object):
         self.client.loop_stop()
         
 
-    def test_joint_accuracy(self,jidx):
+    def joint_accuracy(self,jidx):
         print('start accuracy test for joint ',jidx)
         self.client.loop_start()
         time.sleep(3)
@@ -169,8 +188,11 @@ class robot_test(object):
         self.client.loop_stop()
 
 
-    def test_joint_repeatability(self,jidx):
+    def joint_repeatability(self,jidx:int,record_laser:bool):
         print('start repeatability test for joint ',jidx)
+        if record_laser:
+            thread_laser = Thread(target=self.record_laser,args=('laser_position.csv',))
+            thread_laser.start()
         self.client.loop_start()
         time.sleep(3)
         # lr = laser_rangefinder()
@@ -199,7 +221,11 @@ class robot_test(object):
                     time.sleep(0.1)
                 time.sleep(1)
                 jp.append(self.joint_position[jidx])
-                jpl.append(self.lr.read_sensor_value())
+                if record_laser:
+                    laser_data = self.laser_data[-1:]
+                    jpl.append(laser_data[0][1])
+                else:
+                    jpl.append(self.lr.read_sensor_value())
             joint_record.append(jpl)
             joint_record_encoder.append(jp)
 
@@ -215,14 +241,17 @@ class robot_test(object):
         print('complete repeatability test for joint ',jidx)
         print('the repeatability(laesr) of joint %d is %.7f %s' %(jidx,sum(rp)/len(rp),unit))
         print('the repeatability(encoder) of joint %d is %.7f %s' %(jidx,1000*sum(rp_encoder)/len(rp_encoder),unit))
-        self.client.loop_stop()
 
+        self.client.loop_stop()
+        self.record_button = False
+        thread_laser.join()
 
 
 if __name__=='__main__':
     rt = robot_test()
-    rt.test_joint_range(0)
-    rt.test_joint_repeatability(0)
-    rt.test_joint_accuracy(0)
+
+    # rt.test_joint_range(0)
+    rt.joint_repeatability(0,True)
+    # rt.test_joint_accuracy(0)
 
 
