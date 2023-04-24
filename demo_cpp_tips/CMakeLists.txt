@@ -4,6 +4,11 @@ project(demo_cpp_tips VERSION 0.1.0)
 include(CTest)
 enable_testing()
 
+
+if(NOT CMAKE_CROSSCOMPILING)
+    add_definitions(-DSIMULATION)
+endif()
+
 set(CMAKE_CXX_FLAGS "-std=c++11")
 add_executable(demo_cpp_tips main.cpp test_other.cpp)
 
