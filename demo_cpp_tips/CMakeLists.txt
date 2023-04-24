@@ -10,7 +10,11 @@ if(NOT CMAKE_CROSSCOMPILING)
 endif()
 
 set(CMAKE_CXX_FLAGS "-std=c++11")
-add_executable(demo_cpp_tips main.cpp test_other.cpp)
+aux_source_directory(. SRC_LIST)
+message(${SRC_LIST})
+list(REMOVE_ITEM SRC_LIST ./remove.cpp)
+message(${SRC_LIST})
+add_executable(demo_cpp_tips ${SRC_LIST})
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
