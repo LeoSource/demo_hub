@@ -6,7 +6,7 @@ enable_testing()
 
 
 if(NOT CMAKE_CROSSCOMPILING)
-    add_definitions(-DSIMULATION)
+    add_definitions(-DSIMULATION -Dhello="hello cmake")
 endif()
 
 set(CMAKE_CXX_FLAGS "-std=c++11")

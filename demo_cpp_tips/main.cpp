@@ -5,10 +5,6 @@ int main(int, char**)
     // test_other::test_other();
     // test_other::test_fill();
     // test_other::convert_string();
-    test_other::bind_function();
-#ifdef SIMULATION
-    std::cout<<"simulation mode"<<std::endl;
-#else
-    std::cout<<"runtime mode"<<std::endl;
-#endif
+    // test_other::bind_function();
+    test_other::test_add_definitions();
 }

@@ -23,7 +23,8 @@ using nlohmann::json;
 
 namespace test_other
 {
-void test_other();
+
+
 void test_time();
 void test_enable_logic();
 void test_uint_convert();
@@ -33,6 +34,7 @@ void test_fill();
 void convert_string();
 void json_conversion();
 void bind_function();
+void test_add_definitions();
 
 inline void tt_argumetes(int a){std::cout<<"one argument"<<std::endl;}
 inline void tt_argumetes(int a,int b){std::cout<<"two arguments"<<std::endl;}
@@ -60,20 +62,24 @@ public:
 
 namespace math_tools
 {
-	int sign(double x);
 
-	template<typename T>
-	T limit_value(T value, T min_value, T max_value);
 
-	template<typename T>
-	T limit_min_value(T val, T min_value);
+int sign(double x);
 
-	template<typename T>
-	T limit_max_value(T value, T max_value);
+template<typename T>
+T limit_value(T value, T min_value, T max_value);
 
-	template<typename UT>
-	int64_t u_to_i(UT value);
+template<typename T>
+T limit_min_value(T val, T min_value);
 
-	template<typename T>
-	uint64_t i_to_u(T value);
+template<typename T>
+T limit_max_value(T value, T max_value);
+
+template<typename UT>
+int64_t u_to_i(UT value);
+
+template<typename T>
+uint64_t i_to_u(T value);
+
+
 }
