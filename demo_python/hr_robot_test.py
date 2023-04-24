@@ -16,7 +16,7 @@ class robot_test(object):
         self.config_mqtt()
         self.pub_topic = 'hr_robot'
         time.sleep(0.5)
-        self.lr = laser_rangefinder()
+        self.lr = laser_rangefinder(312500)
         self.record_button = True
 
     def config_mqtt(self):
@@ -191,7 +191,7 @@ class robot_test(object):
     def joint_repeatability(self,jidx:int,record_laser:bool):
         print('start repeatability test for joint ',jidx)
         if record_laser:
-            thread_laser = Thread(target=self.record_laser,args=('laser_position.csv',))
+            thread_laser = Thread(target=self.record_laser,args=('laser_position1.csv',))
             thread_laser.start()
         self.client.loop_start()
         time.sleep(3)
