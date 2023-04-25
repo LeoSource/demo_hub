@@ -17,6 +17,8 @@
 #include <string>
 #include <algorithm>
 #include <functional>
+#include <stdarg.h>
+#include <initializer_list>
 #include "json.hpp"
 
 using nlohmann::json;
@@ -35,6 +37,7 @@ void convert_string();
 void json_conversion();
 void bind_function();
 void test_add_definitions();
+void variadic_arguments();
 
 inline void tt_argumetes(int a){std::cout<<"one argument"<<std::endl;}
 inline void tt_argumetes(int a,int b){std::cout<<"two arguments"<<std::endl;}

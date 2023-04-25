@@ -6,5 +6,12 @@ int main(int, char**)
     // test_other::test_fill();
     // test_other::convert_string();
     // test_other::bind_function();
-    test_other::test_add_definitions();
+    // test_other::test_add_definitions();
+    test_other::variadic_arguments();
+    // for(int i=0;i<10;i++)
+    // {
+    //     int* a = new int;
+    //     int b = 2*i?(i==2):i;
+    //     std::cout<<a<<std::endl;
+    // }
 }

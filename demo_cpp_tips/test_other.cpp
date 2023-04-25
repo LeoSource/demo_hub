@@ -192,6 +192,76 @@ void test_add_definitions()
 	std::cout<<hello<<std::endl;
 }
 
+int mul_sum(int n,...)
+{
+	va_list argptr;
+	va_start(argptr,n);
+	int sum = 0;
+	for(int i=0;i<n;i++)
+		sum += va_arg(argptr,int);
+	va_end(argptr);
+	return sum;
+}
+void myprint(const char* args,...)
+{
+	va_list argptr;
+	va_list aq;
+	va_start(argptr,args);
+	va_copy(aq,argptr);
+	char* arg = nullptr;
+	while (nullptr!=(arg=va_arg(argptr,char*)))
+	{
+		std::cout<<arg<<std::endl;
+	}
+	va_end(argptr);
+	while (nullptr!=(arg=va_arg(aq,char*)))
+	{
+		std::cout<<arg<<std::endl;
+	}
+	va_end(aq);
+}
+// void template_print(){std::cout<<"empty"<<std::endl;}
+template<typename T>
+void template_print(T arg){std::cout<<arg<<std::endl;}
+template<typename T,typename... Args>
+void template_print(T head,Args... rest)
+{
+	std::cout<<"parameter "<<head<<std::endl;
+	template_print(rest...);
+}
+template<typename... Args>
+void comma_print(Args... args)
+{
+	std::initializer_list<int>{(std::cout<<args<<",",0)...};
+}
+void variadic_arguments()
+{
+	system("chcp 65001");//解决cout输出中文乱码问题
+	//可变参数1：可变参数宏
+	// std::cout<<"可变参数宏"<<std::endl;
+	// std::cout<<mul_sum(4,1,3,5,8)<<std::endl;
+	// std::cout<<mul_sum(5,1,3,5,8)<<std::endl;//错误使用
+	// myprint("1","hello","world","test",nullptr);
+
+	//可变参数2：initializer_list标准库类型
+	// std::cout<<"initializer_list标准库类型"<<std::endl;
+	// auto error_msg = [](std::initializer_list<std::string> sl)
+	// {
+	// 	for(auto it=sl.begin();it!=sl.end();it++)
+	// 		std::cout<<*it<<",";
+	// 	std::cout<<std::endl;
+	// };
+	// std::string expected = "aaa", actual = "bbb";
+	// if(expected!=actual)
+	// 	error_msg({"functionX",expected,actual});
+	// else
+	// 	error_msg({"functionX","okay"});
+
+	//可变参数3：可变参数模板
+	template_print(1,"hello",3,"world");
+	comma_print(1,"hello",3,"world");
+}
+
 
 }//namespace test_other
 
@@ -270,4 +340,4 @@ template uint64_t i_to_u(int32_t);
 template uint64_t i_to_u(int64_t);
 
 
-}
+}//namespace math_tools
