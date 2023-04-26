@@ -5,8 +5,14 @@ include(CTest)
 enable_testing()
 
 find_package(Eigen3 REQUIRED)
-include_directories(${EIGEN3_INCLUDE_DIR})
-message(${EIGEN3_INCLUDE_DIR})
+include_directories(${EIGEN3_INCLUDE_DIRS})
+message(${EIGEN3_INCLUDE_DIRS})
+
+get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+foreach(dir ${dirs})
+  message(STATUS "dir='${dir}'")
+endforeach()
+
 
 add_executable(demo_eigen main.cpp test_eigen.cpp)
 
