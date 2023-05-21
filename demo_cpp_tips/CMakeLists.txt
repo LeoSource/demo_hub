@@ -4,6 +4,8 @@ project(demo_cpp_tips VERSION 0.1.0)
 include(CTest)
 enable_testing()
 
+find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIRS})
 
 if(NOT CMAKE_CROSSCOMPILING)
     add_definitions(-DSIMULATION -Dhello="hello cmake")

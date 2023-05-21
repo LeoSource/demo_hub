@@ -7,6 +7,93 @@ namespace test_other
 {
 
 
+void motion_command()
+{
+	json j = {
+		{"name","motion"},
+		{"master",{
+			{"pos",{{1,2,3},{3,2,1}}},
+			{"relative",true}
+		}},
+		{"slave",{
+			{"pos",{{1,2,3,4,5},{5,4,3,2,1}}},
+			{"type","pose"},
+			{"relative",true},
+			{"joint-space",true},
+			{"rcm-constraint",false}
+		}}
+	};
+
+	std::cout<<"name: "<<j.at("name")<<std::endl;
+	auto is_type_valid = [](const std::string& type_name)->bool{
+		std::vector<std::string> type_set{"master","joint","posrpy","rpy","pose","direction"};
+		return std::count(type_set.begin(),type_set.end(),type_name)!=0;};
+	auto calc_rows = [is_type_valid](const std::string& type_name)->int{
+		std::map<std::string,int> type_rows{{"master",3},{"joint",5},{"posrpy",5},{"rpy",2},{"pose",6},{"direction",3}};
+		return is_type_valid(type_name)?type_rows[type_name]:-1;};
+	if(j.contains("master"))
+	{
+		auto is_valid = [j](int rows)->bool
+		{
+			bool valid = j["master"].contains("pos") && j["master"].contains("relative");
+			if(valid)
+			{
+				std::vector<std::vector<double>> pos = j["master"]["pos"];
+				for(auto it=pos.begin();it!=pos.end();it++)
+					valid = valid && (it->size()==rows);
+				return valid;
+			}
+			else
+				return false;
+		};
+		if(is_valid(calc_rows("master")))
+		{
+			std::vector<std::vector<double>> pos = j["master"]["pos"];
+			Eigen::MatrixXd via_pos(3,pos.size());
+			for(int idx=0;idx<pos.size();idx++)
+				via_pos.col(idx) = Eigen::Map<Eigen::VectorXd>(pos[idx].data(),pos[idx].size());
+			std::cout<<"master input parameters is valid!!"<<std::endl;
+			std::cout<<"master position: "<<std::endl;
+			std::cout<<via_pos<<std::endl;
+			std::cout<<"relative: "<<j["master"]["relative"]<<std::endl;
+			std::cout<<std::endl;
+		}
+		else
+			std::cout<<"master input parameters is invalid!!"<<std::endl;
+	}
+	if(j.contains("slave") && j["slave"].contains("type"))
+	{
+		auto is_valid = [j](int rows)->bool
+		{
+			auto slave = j["slave"];
+			bool valid = slave.contains("pos") && slave.contains("relative") && slave.contains("joint-space");
+			if(slave["type"]!="joint")
+				valid = valid && slave.contains("rcm-constraint"); 
+			if(valid)
+			{
+				std::vector<std::vector<double>> pos = j["slave"]["pos"];
+				for(auto it=pos.begin();it!=pos.end();it++)
+					valid = valid && (it->size()==rows);
+				return valid;
+			}
+			else
+				return false;
+		};
+		if(is_valid(calc_rows(j["slave"]["type"])))
+		{
+			std::vector<std::vector<double>> pos = j["slave"]["pos"];
+			Eigen::MatrixXd via_pos(calc_rows(j["slave"]["type"]),pos.size());
+			for(int idx=0;idx<pos.size();idx++)
+				via_pos.col(idx) = Eigen::Map<Eigen::VectorXd>(pos[idx].data(),pos[idx].size());
+			std::cout<<"slave input parameters is valid"<<std::endl;
+			std::cout<<"slave position:"<<std::endl;
+			std::cout<<via_pos<<std::endl;
+		}
+		else
+			std::cout<<"slave input parameters is invalid!!"<<std::endl;
+	}
+}
+
 void convert_string()
 {
 	json j = {
