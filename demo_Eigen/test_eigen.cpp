@@ -37,12 +37,16 @@ namespace test_eigen
 
         test_random_matrix();
 
-        Eigen::RowVectorXd p = Eigen::VectorXd::Zero(3);
-        Eigen::VectorXd q = Eigen::VectorXd::Zero(3);
-        p<<1,2,3;
-        q<<3,2,1;
-        auto r = p*q;
-        std::cout<<r<<std::endl;
+        std::vector<double> vec{1,2,3,4,5,6};
+        Eigen::VectorXd vp = Eigen::Map<VectorXd>(vec.data(),vec.size());
+        auto func = [](Eigen::VectorXd vp)->Eigen::VectorXd
+        {
+            Eigen::VectorXd q(5);
+            q<<5,4,3,2,1;
+            return q;
+        };
+        vp = func(vp);
+        std::cout<<vp<<std::endl;
     }
 
     void test_lambda()

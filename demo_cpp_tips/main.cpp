@@ -7,7 +7,8 @@ int main(int, char**)
     // test_other::convert_string();
     // test_other::bind_function();
     // test_other::test_add_definitions();
-    test_other::variadic_arguments();
+    // test_other::variadic_arguments();
+    test_other::motion_command();
     // for(int i=0;i<10;i++)
     // {
     //     int* a = new int;

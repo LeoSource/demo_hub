@@ -20,6 +20,7 @@
 #include <stdarg.h>
 #include <initializer_list>
 #include "json.hpp"
+#include <Eigen/Dense>
 
 using nlohmann::json;
 
@@ -38,6 +39,7 @@ void json_conversion();
 void bind_function();
 void test_add_definitions();
 void variadic_arguments();
+void motion_command();
 
 inline void tt_argumetes(int a){std::cout<<"one argument"<<std::endl;}
 inline void tt_argumetes(int a,int b){std::cout<<"two arguments"<<std::endl;}

@@ -51,7 +51,10 @@
         "stdexcept": "cpp",
         "streambuf": "cpp",
         "thread": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "core": "cpp",
+        "complex": "cpp",
+        "set": "cpp"
     },
     "cmake.configureArgs": [
         "-DCMAKE_TOOLCHAIN_FILE=D:\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"

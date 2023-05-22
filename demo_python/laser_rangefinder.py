@@ -15,7 +15,7 @@ def find_lasar(bps,max_failed=10):
             continue
         else:
             for port in port_list:
-                if port.manufacturer=='wch.cn':
+                if port.manufacturer=='FTDI':
                     lasar_port = port
                     num_failed = 0
                     break
@@ -69,7 +69,7 @@ class laser_rangefinder(object):
         self.write_data(self.read_vaule_address,b'\xb0',b'\x01')
         count = 0
         while not self.ser.in_waiting:
-            time.sleep(0.001)
+            time.sleep(0.01)
             count = count+1
         rec_data = self.ser.readline()
         res = int.from_bytes(rec_data[2:4],'big')
@@ -88,5 +88,5 @@ class laser_rangefinder(object):
 
 
 if __name__=='__main__':
-    lr = laser_rangefinder()
+    lr = laser_rangefinder(bps=312500)
     lr.run()
