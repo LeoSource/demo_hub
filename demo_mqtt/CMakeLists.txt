@@ -10,6 +10,9 @@ set(CMAKE_CXX_FLAGS "-std=c++11 -pthread")
 set(CMAKE_BUILD_TYPE "Release")
 message(${CMAKE_CROSSCOMPILING})
 
+find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIRS})
+
 if(${CMAKE_CROSSCOMPILING})
     include_directories(${PROJECT_SOURCE_DIR}/include)
     include_directories(${PROJECT_SOURCE_DIR}/include/mqtt)
