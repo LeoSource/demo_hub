@@ -7,6 +7,35 @@ namespace test_other
 {
 
 
+std::mutex mtx;
+void proc1(int a)
+{
+	std::lock_guard<std::mutex> gm(mtx);
+	std::cout<<"proc1 is changing a"<<std::endl;
+	std::cout<<"original a: "<<a<<std::endl;
+	std::cout<<"current a: "<<a+2<<std::endl;
+}//出作用域后gm调用析构函数，自动解锁
+void proc2(int a)
+{
+	{
+		std::lock_guard<std::mutex> gm(mtx);
+		std::cout<<"proc2 is changing a"<<std::endl;
+		std::cout<<"original a: "<<a<<std::endl;
+		std::cout<<"current a: "<<a+3<<std::endl;
+	}//通过使用{}来调整作用域范围，来使得gm在合适的地方被解锁
+	std::cout<<"outer 3"<<std::endl;
+	std::cout<<"outer 4"<<std::endl;
+	std::cout<<"outer 5"<<std::endl;
+}
+void test_lock_guard()
+{
+	int a = 0;
+	std::thread t1(proc1,a);
+	std::thread t2(proc2,a);
+	t1.join();
+	t2.join();
+}
+
 // int n = 0;
 // std::mutex mtx;
 std::atomic_int n{0};

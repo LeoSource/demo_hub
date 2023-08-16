@@ -38,6 +38,7 @@ enum error_algorithm
 namespace test_other
 {
 
+void test_lock_guard();
 void test_mutex();
 void test_thread();
 void test_time();
