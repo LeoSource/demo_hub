@@ -6,12 +6,36 @@
 namespace test_other
 {
 
+
+int n = 0;
+std::mutex mtx;
+void countnumber(int m)
+{
+	mtx.lock();
+	for(int idx=0;idx<m;idx++)
+		n++;
+	mtx.unlock();
+}
+void test_mutex()
+{
+	std::thread th[100];
+	for(std::thread &x:th)
+		x = std::thread(countnumber,10000);
+	for(std::thread &x:th)
+		x.join();
+	std::cout<<n<<std::endl;
+}
+
 void thread_1(){while(true){std::cout<<"thread 1"<<std::endl;std::this_thread::sleep_for(std::chrono::seconds(1));}}
 void thread_2(int x){std::cout<<"thread 2: "<<x<<std::endl;}
 void test_thread()
 {
-	std::thread first(thread_1);
-	std::thread second(thread_2,100);
+	std::thread first([](){
+		while(true){std::cout<<"thread 1"<<std::endl;std::this_thread::sleep_for(std::chrono::seconds(1));}
+		});
+	std::thread second([](int x){
+		std::cout<<"thread 2: "<<x<<std::endl;
+	},100);
 	std::cout<<"main thread"<<std::endl;
 	first.join();
 	// first.detach();

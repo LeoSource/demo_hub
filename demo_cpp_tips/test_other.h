@@ -6,6 +6,7 @@
 #include <io.h>
 #include <conio.h>
 #include <thread>
+#include <mutex>
 #elif __linux__
 #include <sys/stat.h>
 #include <unistd.h>
@@ -36,7 +37,7 @@ enum error_algorithm
 namespace test_other
 {
 
-
+void test_mutex();
 void test_thread();
 void test_time();
 void test_enable_logic();

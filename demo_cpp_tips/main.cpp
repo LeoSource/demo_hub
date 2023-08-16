@@ -17,5 +17,6 @@ int main(int, char**)
     //     int b = 2*i?(i==2):i;
     //     std::cout<<a<<std::endl;
     // }
-    test_other::test_thread();
+    // test_other::test_thread();
+    test_other::test_mutex();
 }
