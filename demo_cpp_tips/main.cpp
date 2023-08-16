@@ -8,11 +8,14 @@ int main(int, char**)
     // test_other::bind_function();
     // test_other::test_add_definitions();
     // test_other::variadic_arguments();
-    test_other::motion_command();
+    // test_other::motion_command();
+    // test_other::try_catch();
+    // test_other::lambda_function_recursion();
     // for(int i=0;i<10;i++)
     // {
     //     int* a = new int;
     //     int b = 2*i?(i==2):i;
     //     std::cout<<a<<std::endl;
     // }
+    test_other::test_thread();
 }

@@ -24,10 +24,20 @@
 
 using nlohmann::json;
 
+
+enum error_algorithm
+{
+	eTranscendental,
+	eSingularity,
+	eOutofRange,
+	eErrLspb
+};
+
 namespace test_other
 {
 
 
+void test_thread();
 void test_time();
 void test_enable_logic();
 void test_uint_convert();
@@ -40,6 +50,8 @@ void bind_function();
 void test_add_definitions();
 void variadic_arguments();
 void motion_command();
+void try_catch();
+void lambda_function_recursion();
 
 inline void tt_argumetes(int a){std::cout<<"one argument"<<std::endl;}
 inline void tt_argumetes(int a,int b){std::cout<<"two arguments"<<std::endl;}

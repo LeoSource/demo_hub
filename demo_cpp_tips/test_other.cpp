@@ -6,6 +6,44 @@
 namespace test_other
 {
 
+void thread_1(){while(true){std::cout<<"thread 1"<<std::endl;std::this_thread::sleep_for(std::chrono::seconds(1));}}
+void thread_2(int x){std::cout<<"thread 2: "<<x<<std::endl;}
+void test_thread()
+{
+	std::thread first(thread_1);
+	std::thread second(thread_2,100);
+	std::cout<<"main thread"<<std::endl;
+	first.join();
+	// first.detach();
+	second.join();
+}
+
+void call_planner() {std::cout<<"call planner"<<std::endl;}
+void call_adapter(std::function<void(void)> func,int idx) {std::cout<<"call adapter "<<idx<<std::endl; func();}
+void lambda_function_recursion()
+{
+	using planner_func = std::function<void(void)>;
+	planner_func fn = [](){call_planner();};
+	std::vector<int> adapter{1,2,3,4};
+	for(int idx=adapter.size()-1;idx>=0;idx--)
+		fn = [fn,idx](){call_adapter(fn,idx);};
+	fn();
+}
+
+void try_catch()
+{
+	auto func = []()
+	{throw eOutofRange;};
+	try
+	{
+		func();
+	}
+	catch(const error_algorithm& e)
+	{
+		std::cout << "error: " << std::to_string(e)<<std::endl;
+	}
+	
+}
 
 void motion_command()
 {
@@ -309,12 +347,24 @@ void myprint(const char* args,...)
 }
 // void template_print(){std::cout<<"empty"<<std::endl;}
 template<typename T>
-void template_print(T arg){std::cout<<arg<<std::endl;}
-template<typename T,typename... Args>
-void template_print(T head,Args... rest)
+std::string to_string(T vec)
 {
-	std::cout<<"parameter "<<head<<std::endl;
-	template_print(rest...);
+	std::string ret;
+    for(int idx=0;idx<vec.size()-1;idx++)
+        ret = ret+std::to_string(vec(idx))+",";
+    ret += std::to_string(vec(vec.size()-1));
+
+    return ret;
+}
+template<typename T,typename... Args>
+std::string to_string(T head,Args... rest)
+{
+    std::string ret;
+	for(int idx=0;idx<head.size();idx++)
+		ret += std::to_string(head(idx))+",";
+    ret += to_string(rest...);
+
+	return ret;
 }
 template<typename... Args>
 void comma_print(Args... args)
@@ -345,7 +395,7 @@ void variadic_arguments()
 	// 	error_msg({"functionX","okay"});
 
 	//可变参数3：可变参数模板
-	template_print(1,"hello",3,"world");
+	std::string ss = to_string(Eigen::Vector3d(1,2,3),Eigen::Vector3d(4,5,6));
 	comma_print(1,"hello",3,"world");
 }
 
