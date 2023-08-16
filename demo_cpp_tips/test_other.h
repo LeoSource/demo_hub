@@ -8,6 +8,7 @@
 #include <thread>
 #include <mutex>
 #include <atomic>
+#include <future>
 #elif __linux__
 #include <sys/stat.h>
 #include <unistd.h>
@@ -38,6 +39,8 @@ enum error_algorithm
 namespace test_other
 {
 
+
+void test_future();
 void test_lock_guard();
 void test_mutex();
 void test_thread();

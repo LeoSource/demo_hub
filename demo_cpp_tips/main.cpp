@@ -19,5 +19,6 @@ int main(int, char**)
     // }
     // test_other::test_thread();
     // test_other::test_mutex();
-    test_other::test_lock_guard();
+    // test_other::test_lock_guard();
+    test_other::test_future();
 }

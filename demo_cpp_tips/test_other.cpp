@@ -7,6 +7,16 @@ namespace test_other
 {
 
 
+void count_big_number(){for(int i=0;i<=1000000000;i++);}
+void test_future()
+{
+	std::future<void> fut = std::async(std::launch::async,count_big_number);
+	std::cout<<"please wait "<<std::flush;
+	while (fut.wait_for(std::chrono::milliseconds(50))!=std::future_status::ready)
+		std::cout<<"."<<std::flush;
+	std::cout<<std::endl<<"finished!"<<std::endl;
+}
+
 std::mutex mtx;
 void proc1(int a)
 {
