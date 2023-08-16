@@ -7,6 +7,7 @@
 #include <conio.h>
 #include <thread>
 #include <mutex>
+#include <atomic>
 #elif __linux__
 #include <sys/stat.h>
 #include <unistd.h>

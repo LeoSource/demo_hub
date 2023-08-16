@@ -7,14 +7,15 @@ namespace test_other
 {
 
 
-int n = 0;
-std::mutex mtx;
+// int n = 0;
+// std::mutex mtx;
+std::atomic_int n{0};
 void countnumber(int m)
 {
-	mtx.lock();
+	// mtx.lock();
 	for(int idx=0;idx<m;idx++)
 		n++;
-	mtx.unlock();
+	// mtx.unlock();
 }
 void test_mutex()
 {
