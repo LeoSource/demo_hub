@@ -11,6 +11,7 @@
 #include "mqtt/async_client.h"
 #include "json.hpp"
 #include "robot_state.h"
+#include <Eigen/Dense>
 
 using nlohmann::json;
 
