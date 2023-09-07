@@ -20,5 +20,9 @@ int main(int, char**)
     // test_other::test_thread();
     // test_other::test_mutex();
     // test_other::test_lock_guard();
-    test_other::test_future();
+    // test_other::test_future();
+    test_other::test_combination();
+#ifdef SIMULATION
+    std::cout<<"simulation"<<std::endl;
+#endif
 }
