@@ -3,11 +3,50 @@
 #include <random>
 #include "float.h"
 #include "json.hpp"
+#include <unsupported/Eigen/NonLinearOptimization>
 
 using nlohmann::json;
 
 namespace test_eigen
 {
+
+
+    struct MyFunctor
+    {
+        int operator()(const Eigen::VectorXf &x, Eigen::VectorXf &fvec) const
+        {
+            fvec(0) = x(0)*x(0)-2*x(0)-x(1)+0.5;
+            fvec(1) = x(0)*x(0)+4*x(1)*x(1)-4;
+
+            return 0;
+        }
+
+
+        int df(const Eigen::VectorXf &x, Eigen::MatrixXf &fjac) const
+        {
+            fjac(0,0) = 2*x(0)-2;
+            fjac(0,1) = -1;
+            fjac(1,0) = 2*x(0);
+            fjac(1,1) = 8*x(1);
+            return 0;
+        }
+
+        // int inputs() const { return 3; }
+        int values() const { return 2; } // number of constraints
+    };
+    void test_nonlinear_equation()
+    {
+        Eigen::VectorXf x(2);
+        x(0) = 1;
+        x(1) = 1;
+
+        MyFunctor functor;
+        Eigen::LevenbergMarquardt<MyFunctor, float> lm(functor);
+
+        lm.minimize(x);
+        std::cout<<x<<std::endl;
+    }
+
     void test_eigen()
     {
         //// test transformation between rotation matrix and RPY angle
