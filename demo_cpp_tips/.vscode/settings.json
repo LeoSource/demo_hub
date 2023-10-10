@@ -57,7 +57,8 @@
         "set": "cpp",
         "condition_variable": "cpp",
         "mutex": "cpp",
-        "future": "cpp"
+        "future": "cpp",
+        "numericaldiff": "cpp"
     },
     "cmake.configureArgs": [
         "-DCMAKE_TOOLCHAIN_FILE=D:\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"

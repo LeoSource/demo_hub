@@ -1,11 +1,11 @@
 #include "test_other.h"
 #include "float.h"
+#include <unsupported/Eigen/NonLinearOptimization>
 
 #define NUM_MOTORS 8
 
 namespace test_other
 {
-
 
 
 template<typename T>
@@ -15,7 +15,6 @@ T hconcat(T matA,T matB)
 	rlt<<matA,matB;
 	return rlt;
 }
-
 template<typename T>
 T vconcat(T matA,T matB)
 {
@@ -23,7 +22,6 @@ T vconcat(T matA,T matB)
 	rlt<<matA,matB;
 	return rlt;
 }
-
 Eigen::MatrixXi combs(const Eigen::VectorXi& v,int m)
 {
 	Eigen::MatrixXi rlt;
@@ -136,6 +134,11 @@ void test_thread()
 	first.join();
 	// first.detach();
 	second.join();
+	while (true)
+	{
+		std::this_thread::sleep_for(std::chrono::seconds(10));
+	}
+	
 }
 
 void call_planner() {std::cout<<"call planner"<<std::endl;}
@@ -289,8 +292,10 @@ void json_conversion()
 	double array[]{3,2,1};
 	jn["pos"] = std::vector<double>{1,2,3};
 	jn["vel"] = array;
+	jn["acc"] = nullptr;
 	std::cout<<jn.at("pos")<<std::endl;
 	std::cout<<jn.at("vel")<<std::endl;
+	std::cout<<jn.at("acc").is_null()<<std::endl;
 }
 
 void bind_function()
