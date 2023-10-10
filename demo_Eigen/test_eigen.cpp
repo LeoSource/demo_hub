@@ -13,21 +13,37 @@ namespace test_eigen
 
     struct MyFunctor
     {
-        int operator()(const Eigen::VectorXf &x, Eigen::VectorXf &fvec) const
+    private:
+        Eigen::VectorXd _paramk;
+        double _l0,_px,_py;
+    public:
+        MyFunctor(Eigen::VectorXd paramk,double l0,double px,double py)
         {
-            fvec(0) = x(0)*x(0)-2*x(0)-x(1)+0.5;
-            fvec(1) = x(0)*x(0)+4*x(1)*x(1)-4;
+            _paramk = paramk;
+            _l0 = l0;
+            _px = px;
+            _py = py;
+        }
 
+        int operator()(const Eigen::VectorXd &x, Eigen::VectorXd &fvec) const
+        {
+            double w = (_paramk(0)*_l0*_l0*_l0*_l0+_paramk(1)*_l0*_l0*_l0)*x(1);
+            double phi = (_paramk(2)*_l0*_l0*_l0+_paramk(3)*_l0*_l0)*x(1);
+            fvec(0) = _l0*cos(x(1)-w/_l0)+x(0)*cos(x(1)-phi)-_px;
+            fvec(1) = _l0*sin(x(1)-w/_l0)+x(0)*sin(x(1)-phi)-_py;
             return 0;
         }
 
 
-        int df(const Eigen::VectorXf &x, Eigen::MatrixXf &fjac) const
+        int df(const Eigen::VectorXd &x, Eigen::MatrixXd &fjac) const
         {
-            fjac(0,0) = 2*x(0)-2;
-            fjac(0,1) = -1;
-            fjac(1,0) = 2*x(0);
-            fjac(1,1) = 8*x(1);
+            double phi = (_paramk(2)*_l0*_l0*_l0+_paramk(3)*_l0*_l0)*x(1);
+            fjac(0,0) = cos(x(1)-phi);
+            double a = 1-(_paramk(0)*_l0*_l0*_l0+_paramk(1)*_l0*_l0);
+            double b = 1-(_paramk(2)*_l0*_l0*_l0+_paramk(3)*_l0*_l0);
+            fjac(0,1) = -_l0*a*sin(a*x(1))-x(0)*b*sin(b*x(1));
+            fjac(1,0) = sin(x(1)-phi);
+            fjac(1,1) = a*_l0*cos(a*x(1))+b*x(0)*cos(b*x(1));
             return 0;
         }
 
@@ -36,12 +52,14 @@ namespace test_eigen
     };
     void test_nonlinear_equation()
     {
-        Eigen::VectorXf x(2);
-        x(0) = 1;
-        x(1) = 1;
+        Eigen::VectorXd x(2);
+        x(0) = 0;
+        x(1) = 0;
 
-        MyFunctor functor;
-        Eigen::LevenbergMarquardt<MyFunctor, float> lm(functor);
+        Eigen::VectorXd paramk(4);
+        paramk<<0.021192213499105,-0.087500500919441,-0.010985344150205,0.076021897320699;
+        MyFunctor functor(paramk,3,8,2);
+        Eigen::LevenbergMarquardt<MyFunctor, double> lm(functor);
 
         lm.minimize(x);
         std::cout<<x<<std::endl;
