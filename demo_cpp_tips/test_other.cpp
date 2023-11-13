@@ -8,59 +8,6 @@ namespace test_other
 {
 
 
-template<typename T>
-T hconcat(T matA,T matB)
-{
-	T rlt(matA.rows(),matA.cols()+matB.cols());
-	rlt<<matA,matB;
-	return rlt;
-}
-template<typename T>
-T vconcat(T matA,T matB)
-{
-	T rlt(matA.rows()+matB.rows(),matA.cols());
-	rlt<<matA,matB;
-	return rlt;
-}
-Eigen::MatrixXi combs(const Eigen::VectorXi& v,int m)
-{
-	Eigen::MatrixXi rlt;
-	int n = v.size();
-	if(n==m)
-		rlt = v.transpose();
-	else if(m==1)
-		rlt = v;		
-	else
-	{
-		std::vector<Eigen::MatrixXi> P;
-		if(m<n && m>1)
-		{
-			// int cnm = std::tgamma(n+1)/(std::tgamma(m+1)*std::tgamma(n-m+1));
-			for(int k=0;k<n-m+1;k++)
-			{
-				Eigen::MatrixXi Q = combs(v.segment(k+1,n-k-1),m-1);
-				int rows = Q.rows();
-				int cols = Q.cols()+1;
-				Eigen::MatrixXi Pmat(rows,cols);
-				Pmat.col(0) = Eigen::MatrixXi::Ones(rows,1)*v(k);
-				Pmat.rightCols(cols-1) = Q;
-				P.push_back(Pmat);
-			}
-		}
-		rlt = P[0];
-		for(int idx=1;idx<P.size();idx++)
-			rlt = vconcat<Eigen::MatrixXi>(rlt,P[idx]);
-	}
-	return rlt;
-}
-void test_combination()
-{
-	std::cout<<std::tgamma(5+1)<<std::endl;
-	Eigen::VectorXi ev(4);
-	ev<<1,2,3,4;
-	std::cout<<combs(ev,2)<<std::endl;
-}
-
 void count_big_number(){for(int i=0;i<=1000000000;i++);}
 void test_future()
 {

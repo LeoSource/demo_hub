@@ -40,7 +40,6 @@ namespace test_other
 {
 
 
-void test_combination();
 void test_future();
 void test_lock_guard();
 void test_mutex();
