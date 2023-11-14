@@ -36,6 +36,7 @@ namespace test_eigen
 
 	void test_eigen_error();
 	void test_nonlinear_equation();
+	void test_combination();
 }
 
 

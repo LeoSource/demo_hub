@@ -5,14 +5,14 @@
 #include <direct.h>
 #include <io.h>
 #include <conio.h>
-#include <thread>
-#include <mutex>
-#include <atomic>
-#include <future>
 #elif __linux__
 #include <sys/stat.h>
 #include <unistd.h>
 #endif
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <future>
 #include <iostream>
 #include <random>
 #include <map>
@@ -40,6 +40,7 @@ namespace test_other
 {
 
 
+void test_thread_name();
 void test_future();
 void test_lock_guard();
 void test_mutex();

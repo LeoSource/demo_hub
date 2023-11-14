@@ -8,6 +8,31 @@ namespace test_other
 {
 
 
+void test_thread_name()
+{
+	std::thread task1([](){
+		// pthread_setname_np(pthread_self(),"task1");
+		while(true){
+			std::this_thread::sleep_for(std::chrono::milliseconds(500));
+			std::cout<<"task1"<<std::endl;
+		}
+	});
+	std::thread task2([](){
+		// pthread_setname_np(pthread_self(),"task2");
+		while(true){
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+			std::cout<<"task2"<<std::endl;
+		}
+	});
+	pthread_setname_np(pthread_self(),"main");
+	while (true)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		std::cout<<"main task"<<std::endl;
+	}
+	
+}
+
 void count_big_number(){for(int i=0;i<=1000000000;i++);}
 void test_future()
 {
@@ -302,7 +327,11 @@ void test_time()
 	time_t rawtime = time(nullptr);
 	//time(&rawtime);
 	struct tm timeinfo;
+#ifdef _WIN32	
 	localtime_s(&timeinfo, &rawtime);
+#elif __linux__
+	localtime_r(&rawtime,&timeinfo);
+#endif
 	std::cout<<timeinfo.tm_year+1900<<std::endl;
 	std::cout<<timeinfo.tm_mon+1<<std::endl;
 	std::cout<<timeinfo.tm_mday<<std::endl;
@@ -363,7 +392,7 @@ void test_directory()
 	std::string file_name = "../data/joint_position.csv";
 #elif __linux__
 	std::cout<<"Current working directory: "<<get_current_dir_name()<<std::endl;
-	string file_name = "../../data/joint_position.csv";
+	std::string file_name = "../../data/joint_position.csv";
 #endif
 }
 
