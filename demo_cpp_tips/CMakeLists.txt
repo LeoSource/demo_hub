@@ -11,7 +11,7 @@ if(NOT CMAKE_CROSSCOMPILING)
     add_definitions(-DSIMULATION -Dhello="hello cmake")
 endif()
 
-set(CMAKE_CXX_FLAGS "-std=c++11")
+set(CMAKE_CXX_FLAGS "-std=c++11 -pthread")
 aux_source_directory(. SRC_LIST)
 message(${SRC_LIST})
 list(REMOVE_ITEM SRC_LIST ./remove.cpp)

@@ -18,3 +18,5 @@ demo_python/__pycache__
 demo_python/.vscode
 
 demo_gtest/build/
+
+demo_xenomai/build
