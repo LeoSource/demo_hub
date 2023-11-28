@@ -20,3 +20,5 @@ demo_python/.vscode
 demo_gtest/build/
 
 demo_xenomai/build
+
+demo_ros_controllers/build

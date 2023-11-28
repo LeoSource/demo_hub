@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "*.launch": "xml",
+        "xlocale": "cpp",
+        "xlocnum": "cpp"
+    },
+    "cmake.configureArgs": [
+        "-DCMAKE_TOOLCHAIN_FILE=D:\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"
+    ]
+}
