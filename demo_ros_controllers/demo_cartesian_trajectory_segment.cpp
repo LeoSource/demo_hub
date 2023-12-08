@@ -1,7 +1,10 @@
+#define _USE_MATH_DEFINES
 #include <iostream>
 #include "cartesian_trajectory_segment.h"
 
 using namespace ros_controllers_cartesian;
+const double R2D = 180.0/M_PI;
+const double D2R = M_PI/180.0;
 
 int main(int, char**)
 {
@@ -17,21 +20,13 @@ int main(int, char**)
     //--------------------------------------------------------------------------------
     CartesianState c;
 
-    c.v.x() = 1.1;
-    c.v.y() = 1.2;
-    c.v.z() = 1.3;
+    c.q = Eigen::Quaterniond(Eigen::AngleAxisd(90*D2R,Eigen::Vector3d::UnitZ()));
 
-    c.w.x() = 2.1;
-    c.w.y() = 2.2;
-    c.w.z() = 2.3;
+    c.w.x() = 0;
+    c.w.y() = 1;
+    c.w.z() = 0;
 
-    c.v_dot.x() = 3.1;
-    c.v_dot.y() = 3.2;
-    c.v_dot.z() = 3.3;
-
-    c.w_dot.x() = 4.1;
-    c.w_dot.y() = 4.2;
-    c.w_dot.z() = 4.3;
+    CartesianTrajectorySegment::SplineState s = convert(c);
 
     std::stringstream before;
     std::stringstream after;

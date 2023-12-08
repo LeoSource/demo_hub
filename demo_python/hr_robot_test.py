@@ -11,7 +11,7 @@ from paho.mqtt import client as mqtt_client
 class robot_test(object):
     def __init__(self) -> None:
         self.topic = 'robot_info'
-        self.broker = '192.168.3.242'
+        self.broker = '192.168.2.242'
         self.port = 1883
         self.config_mqtt()
         self.pub_topic = 'hr_robot'
