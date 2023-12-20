@@ -40,6 +40,7 @@ namespace test_other
 {
 
 
+void test_arguments();
 void test_thread_name();
 void test_future();
 void test_lock_guard();
@@ -63,12 +64,20 @@ void lambda_function_recursion();
 inline void tt_argumetes(int a){std::cout<<"one argument"<<std::endl;}
 inline void tt_argumetes(int a,int b){std::cout<<"two arguments"<<std::endl;}
 
+struct st_val
+{
+	int val1;
+	bool val2;
+	double val3;
+};
+
 class test_class
 {
-private:
-	/* data */
 public:
-	test_class(/* args */) = default;
+	int& _arg1;
+public:
+	// test_class(/* args */) = default;
+	test_class(st_val& arg):_arg1(arg.val1) {}
 	~test_class() = default;
 	void set_parameters(std::vector<int> v)
 	{
@@ -77,6 +86,10 @@ public:
 	void set_parameters(int v)
 	{
 		std::cout<<"complete setting parameters"<<std::endl;
+	}
+	void change()
+	{
+		_arg1 = 101;
 	}
 };
 

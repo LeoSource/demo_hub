@@ -2,7 +2,6 @@
 
 int main(int, char**)
 {
-    // test_other::test_other();
     // test_other::test_fill();
     // test_other::convert_string();
     // test_other::json_conversion();
@@ -23,5 +22,6 @@ int main(int, char**)
     // test_other::test_lock_guard();
     // test_other::test_future();
     // test_other::test_combination();
-    test_other::test_thread_name();
+    // test_other::test_thread_name();
+    test_other::test_arguments();
 }

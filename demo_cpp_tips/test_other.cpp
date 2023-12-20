@@ -8,6 +8,14 @@ namespace test_other
 {
 
 
+void test_arguments()
+{
+	st_val stval {1,false,3.3};
+	test_class tclass(stval);
+	tclass.change();
+	std::cout<<tclass._arg1<<std::endl;
+}
+
 void test_thread_name()
 {
 	std::thread task1([](){
@@ -290,7 +298,8 @@ void bind_function()
 	f(2);
 
 	std::cout<<std::endl<<std::endl;
-	test_class tclass;
+	st_val a;
+	test_class tclass(a);
 	auto execute_cmd = [j](const std::string& cmd,std::function<void(std::vector<int>)> execute)
 	{
 		std::vector<int> value = j.at(cmd);
