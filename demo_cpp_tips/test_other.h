@@ -71,14 +71,28 @@ struct st_val
 	double val3;
 };
 
-class test_class
+class interface_class
+{
+public:
+	std::string _name;
+public:
+	interface_class() = default;
+	virtual ~interface_class() = default;
+};
+class classA : public interface_class
 {
 public:
 	int& _arg1;
+	st_val* _st_ptr;
 public:
-	// test_class(/* args */) = default;
-	test_class(st_val& arg):_arg1(arg.val1) {}
-	~test_class() = default;
+	classA(/* args */) = default;
+	classA(st_val& arg,st_val* arg_ptr=nullptr):_arg1(arg.val1),_st_ptr(arg_ptr)
+	{
+		_name = "classA";
+		std::cout<<_name<<": "<<_arg1<<std::endl;
+		std::cout<<"address: "<<&_arg1<<std::endl;
+	}
+	~classA() = default;
 	void set_parameters(std::vector<int> v)
 	{
 		std::cout<<"complete setting parameters"<<std::endl;
@@ -89,8 +103,54 @@ public:
 	}
 	void change()
 	{
-		_arg1 = 101;
+		_arg1 = 1;
 	}
+};
+class classB : public interface_class
+{
+public:
+	int& _arg1;
+	st_val* _st_ptr;
+public:
+	classB() = default;
+	classB(st_val& arg,st_val* arg_ptr=nullptr):_arg1(arg.val1),_st_ptr(arg_ptr)
+	{
+		_name = "classB";
+		std::cout<<_name<<": "<<_arg1<<std::endl;
+		std::cout<<"address: "<<&_arg1<<std::endl;	
+	}
+	~classB() = default;
+};
+class manager
+{
+public:
+	std::shared_ptr<classA> _ca;
+	std::shared_ptr<classB> _cb;
+	st_val stval;
+public:
+	manager()
+	{
+		// st_val stval{0,false,3.3};
+		stval = st_val{0,false,3.3};
+		st_val stval1{100,true,2.2};
+		_ca = std::make_shared<classA>(stval,&stval1);
+		_cb = std::make_shared<classB>(stval,&stval1);
+	}
+	void run(st_val& stval)
+	{
+		// _ca = std::make_shared<classA>(stval);
+		// _cb = std::make_shared<classB>(stval);
+		while (true)
+		{
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+			_ca->change();
+			// std::cout<<_ca->_name<<": "<<_ca->_arg1<<std::endl;
+			// std::cout<<"address: "<<&(_ca->_arg1)<<std::endl;
+			// std::cout<<_cb->_name<<": "<<_cb->_arg1<<std::endl;
+			// std::cout<<"address: "<<&(_cb->_arg1)<<std::endl;
+		}
+	}
+	~manager() = default;
 };
 
 	

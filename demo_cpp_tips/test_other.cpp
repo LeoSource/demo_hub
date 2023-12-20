@@ -10,10 +10,9 @@ namespace test_other
 
 void test_arguments()
 {
-	st_val stval {1,false,3.3};
-	test_class tclass(stval);
-	tclass.change();
-	std::cout<<tclass._arg1<<std::endl;
+	manager cm;
+	st_val stval{3,false,1.1};
+	cm.run(stval);
 }
 
 void test_thread_name()
@@ -299,7 +298,7 @@ void bind_function()
 
 	std::cout<<std::endl<<std::endl;
 	st_val a;
-	test_class tclass(a);
+	classA tclass(a);
 	auto execute_cmd = [j](const std::string& cmd,std::function<void(std::vector<int>)> execute)
 	{
 		std::vector<int> value = j.at(cmd);
@@ -308,8 +307,8 @@ void bind_function()
 		else
 			std::cout<<"input parameters is invalid"<<std::endl;
 	};
-	using mfunc_ptr = void(test_class::*)(std::vector<int>);
-	auto p = std::bind<void(test_class::*)(std::vector<int>)>(&test_class::set_parameters,&tclass,std::placeholders::_1);
+	using mfunc_ptr = void(classA::*)(std::vector<int>);
+	auto p = std::bind<void(classA::*)(std::vector<int>)>(&classA::set_parameters,&tclass,std::placeholders::_1);
 	execute_cmd("control_word",p);
 	execute_cmd("control_mode",p);
 	// is_valid("control_word");
