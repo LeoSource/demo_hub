@@ -53,7 +53,7 @@ class force_sensor(object):
     def stop_record(self,x):
         self.record_button = False
         t = time.strftime('%Y-%m%d-%H%M%S',time.localtime())
-        filename = 'force_data_'+t+'.txt'
+        filename = './data/force_data_'+t+'.txt'
         with open(filename,'w',newline='') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerows(self.force_data)
@@ -80,7 +80,7 @@ class force_sensor(object):
             fs = force[0]/10.0
             fm = force[1]/10.0
             if self.record_button and abs(fs)<100 and abs(fm)<100:
-                self.force_data.append([fs,fm])
+                self.force_data.append([time.time(),fs,fm])
             time.sleep(0.001)
             # print(fs)
             # time.sleep(1)
