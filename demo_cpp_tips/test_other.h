@@ -84,9 +84,11 @@ class classA : public interface_class
 public:
 	int& _arg1;
 	st_val* _st_ptr;
+	std::shared_ptr<st_val> _st_sptr;
 public:
 	classA(/* args */) = default;
-	classA(st_val& arg,st_val* arg_ptr=nullptr):_arg1(arg.val1),_st_ptr(arg_ptr)
+	classA(st_val& arg,st_val* arg_ptr=nullptr,std::shared_ptr<st_val> arg_sptr=nullptr)
+		:_arg1(arg.val1),_st_ptr(arg_ptr),_st_sptr(arg_sptr)
 	{
 		_name = "classA";
 		std::cout<<_name<<": "<<_arg1<<std::endl;
@@ -111,9 +113,11 @@ class classB : public interface_class
 public:
 	int& _arg1;
 	st_val* _st_ptr;
+	std::shared_ptr<st_val> _st_sptr;
 public:
 	classB() = default;
-	classB(st_val& arg,st_val* arg_ptr=nullptr):_arg1(arg.val1),_st_ptr(arg_ptr)
+	classB(st_val& arg,st_val* arg_ptr=nullptr,std::shared_ptr<st_val> arg_sptr=nullptr)
+		:_arg1(arg.val1),_st_ptr(arg_ptr),_st_sptr(arg_sptr)
 	{
 		_name = "classB";
 		std::cout<<_name<<": "<<_arg1<<std::endl;
@@ -133,8 +137,12 @@ public:
 		// st_val stval{0,false,3.3};
 		stval = st_val{0,false,3.3};
 		st_val stval1{100,true,2.2};
-		_ca = std::make_shared<classA>(stval,&stval1);
-		_cb = std::make_shared<classB>(stval,&stval1);
+		std::shared_ptr<st_val> stval2 = std::make_shared<st_val>();
+		stval2->val1 = 200;
+		stval2->val2 = true;
+		stval2->val3 = 4.4;
+		_ca = std::make_shared<classA>(stval,&stval1,stval2);
+		_cb = std::make_shared<classB>(stval,&stval1,stval2);
 	}
 	void run(st_val& stval)
 	{
