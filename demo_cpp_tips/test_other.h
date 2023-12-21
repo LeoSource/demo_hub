@@ -136,13 +136,17 @@ public:
 	{
 		// st_val stval{0,false,3.3};
 		stval = st_val{0,false,3.3};
-		st_val stval1{100,true,2.2};
+		// st_val stval1{100,true,2.2};
+		st_val* stval1 = new st_val();
+		stval1->val1 = 100;
+		stval1->val2 = true;
+		stval1->val3 = 2.2;
 		std::shared_ptr<st_val> stval2 = std::make_shared<st_val>();
 		stval2->val1 = 200;
 		stval2->val2 = true;
 		stval2->val3 = 4.4;
-		_ca = std::make_shared<classA>(stval,&stval1,stval2);
-		_cb = std::make_shared<classB>(stval,&stval1,stval2);
+		_ca = std::make_shared<classA>(stval,stval1,stval2);
+		_cb = std::make_shared<classB>(stval,stval1,stval2);
 	}
 	void run(st_val& stval)
 	{
