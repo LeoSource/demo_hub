@@ -4,6 +4,7 @@ import os
 import pydicom
 import SimpleITK as sitk
 import numpy as np
+import matplotlib.pyplot as plt
 
 # https://cloud.tencent.com/developer/article/1652244
 dcmfile_list = []
@@ -26,6 +27,9 @@ def dcm2mha_with_pydicom():
     for dcm_name in dcmfile_list:
         dcm = pydicom.read_file(dcm_name)
         dcm_array[:,:,dcmfile_list.index(dcm_name)] = dcm.pixel_array
+        plt.figure
+        plt.imshow(dcm.pixel_array,cmap='gray')
+        plt.show()
     dcm_array = np.transpose(dcm_array,(2,0,1))
     sitk_image = sitk.GetImageFromArray(dcm_array,isVector=False)
     sitk_image.SetSpacing(pixel_spacing)
@@ -65,4 +69,10 @@ def dcm2mha_with_sitk():
 
 if __name__ == '__main__':
     # dcm2mha_with_sitk()
-    dcm2mha_with_pydicom()
+    # dcm2mha_with_pydicom()
+    image = sitk.ReadImage('test1.mha')
+    ct_array = sitk.GetArrayFromImage(image)
+    print(image.GetSize())
+    print(ct_array.shape)
+    plt.imshow(ct_array[2,:,:],cmap='gray')
+    plt.show()
