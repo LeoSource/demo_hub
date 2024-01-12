@@ -212,6 +212,9 @@ class AutoSphereDetect():
            
     def run(self,flag,file_path):
         img = sitk.ReadImage(file_path)
+        img_array = sitk.GetArrayFromImage(img)
+        for idx in range(0,img.GetSize()[2]):
+            plt.imshow(img_array[idx,:,:],cmap=plt.cm.gray)
         shift_img = self.window_transform(img,1000,300) #shift img to bone window -200-800
         mask,num = self.seg_img(flag,img,shift_img) 
         center_physi_list,radius_list = self.get_center_set(mask,num)
@@ -223,7 +226,7 @@ class AutoSphereDetect():
 if __name__ == '__main__': 
   
     #file_path = 'D:/DataSet/sphere_test/203_1.5_2.nii.gz'  
-    file_path = "F:/0_project/demo_hub/demo_python/test1.mha"
+    file_path = "F:/0_project/demo_hub/demo_python/test2.mha"
     #file_path = "D:\\DataSet\\test.nii.gz"
     auto_detect = AutoSphereDetect()
     center_array,error = auto_detect.run(1,file_path)
