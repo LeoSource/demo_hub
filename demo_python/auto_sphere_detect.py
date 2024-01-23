@@ -41,6 +41,9 @@ class AutoSphereDetect():
         ct_array = sitk.GetArrayFromImage(img)
         
         thre_mask = self.itk_tool.threshlod_seg(shift_img,256,254)
+        # thre_mask.CopyInformation(img)
+        # sitk.WriteImage(thre_mask,'thre_mask.mha')
+
         connect_filter = sitk.ConnectedComponentImageFilter()
         connect_filter.SetFullyConnected(False)
         connect_re_mask = connect_filter.Execute(thre_mask)
@@ -61,7 +64,10 @@ class AutoSphereDetect():
             if flag == 1 and -100 < self.cal_ROIVolume(spacing,voxel_num)-905 < 100:
                 small_islands_mask[np_connect_array == label] = 100
                 print(voxel_num)
-                
+        
+        # new_img = sitk.GetImageFromArray(small_islands_mask)
+        # new_img.CopyInformation(img)
+        # sitk.WriteImage(new_img,'small_islands_mask.mha')#include 4 balls
         
         seed_list =[]
         if flag == 0:
@@ -83,6 +89,8 @@ class AutoSphereDetect():
          
         sphere_mask = connect_filter.Execute(seg_mask)
         sphere_array = sitk.GetArrayFromImage(sphere_mask)
+        # sphere_mask.CopyInformation(img)
+        # sitk.WriteImage(sphere_mask,'sphere_mask.mha')
         
         lss_filter.Execute(sphere_mask)
         num_connected_label = connect_filter.GetObjectCount()
@@ -212,23 +220,37 @@ class AutoSphereDetect():
            
     def run(self,flag,file_path):
         img = sitk.ReadImage(file_path)
-        img_array = sitk.GetArrayFromImage(img)
-        for idx in range(0,img.GetSize()[2]):
-            plt.imshow(img_array[idx,:,:],cmap=plt.cm.gray)
         shift_img = self.window_transform(img,1000,300) #shift img to bone window -200-800
+        # img_array = sitk.GetArrayFromImage(img)
+        # shift_img_array = sitk.GetArrayFromImage(shift_img)
+        # plt.imshow(shift_img_array[2,:,:],cmap=plt.cm.gray)
+        # cv2.imshow('test1',shift_img_array[2,:,:])
+        # for idx in range(0,img.GetSize()[2]):
+        #     plt.figure()
+        #     plt.subplot(1,2,1)
+        #     plt.imshow(img_array[idx,:,:],cmap=plt.cm.gray)
+        #     plt.subplot(1,2,2)
+        #     plt.imshow(shift_img_array[idx,:,:],cmap=plt.cm.gray)
+        #     plt.close('all')
         mask,num = self.seg_img(flag,img,shift_img) 
         center_physi_list,radius_list = self.get_center_set(mask,num)
         center_physi_list = self.reorder_sphere_list(flag,center_physi_list)
         center_index_list = self.get_continuous_index(img,center_physi_list)
+        print(center_physi_list)
+        print(center_index_list)
         center_array = np.hstack([center_index_list,np.asarray(center_physi_list),np.asarray(radius_list).reshape(len(radius_list),1)])
         return center_array,self.error
 
 if __name__ == '__main__': 
   
+    # plt.ion()
     #file_path = 'D:/DataSet/sphere_test/203_1.5_2.nii.gz'  
-    file_path = "F:/0_project/demo_hub/demo_python/test2.mha"
+    file_path = "F:/0_project/demo_hub/demo_python/1.2.840.113619.2.428.3.695552.238.1703812879.480.mha"
     #file_path = "D:\\DataSet\\test.nii.gz"
     auto_detect = AutoSphereDetect()
     center_array,error = auto_detect.run(1,file_path)
+    # plt.ioff()
+    plt.show()
+
     
     
