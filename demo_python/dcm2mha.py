@@ -9,7 +9,13 @@ import matplotlib.pyplot as plt
 # https://cloud.tencent.com/developer/article/1652244
 dcmfile_list = []
 # dcm_path = "C:/Default_D/leo/MSpace/prca/dicom/20231229/002/1.2.840.113619.2.428.3.695552.238.1703812878.766"
-dcm_path = "F:/0_project/prca/dicom/20231229/002/1.2.840.113619.2.428.3.695552.238.1703812878.766"
+dcm_path = "F:/0_project/prca/dicom/20240122/1.2.840.113619.2.428.3.695552.36.1705889324.84"
+
+def read_dcm_series(file_path):
+    reader = sitk.ImageSeriesReader()
+    dcm_names = reader.GetGDCMSeriesFileNames(file_path)
+    reader.SetFileNames(dcm_names)
+    return reader.Execute()
 
 def dcm2mha_with_pydicom():
     for dir_name,subdir_list,file_list in os.walk(dcm_path):
@@ -54,7 +60,7 @@ def dcm2mha_with_sitk():
     print("Image origin:",origin)
 
     # write dicom image
-    sitk.WriteImage(image,"test1.mha")
+    sitk.WriteImage(image,"20240122_4.mha")
 
     # sitk image to numpy data
     image_array = sitk.GetArrayFromImage(image) # z,y,x
@@ -66,13 +72,27 @@ def dcm2mha_with_sitk():
     # image2.SetOrigin(origin)
     # sitk.WriteImage(image2,"test2.mha")
 
+def resample_with_spacing(img,dest_spacing):
+    src_size = img.GetSize()
+    src_spacing = img.GetSpacing()
+    dest_size = np.array(src_size)*np.array(src_spacing)/np.array(dest_spacing)
+    dest_size = np.round(dest_size).astype(np.int32).tolist()
+
+    return sitk.Resample(img,dest_size,sitk.Transform(),sitk.sitkLinear,img.GetOrigin(),
+                         dest_spacing,img.GetDirection(),0,img.GetPixelIDValue())
+
+def resample_with_size(img,dest_size):
+    src_size = img.GetSize()
+    src_spacing = img.GetSpacing()
+    dest_spacing = np.array(src_size)*np.array(src_spacing)/np.array(dest_size)
+
+    return sitk.Resample(img,dest_size,sitk.Transform(),sitk.sitkLinear,img.GetOrigin(),
+                         dest_spacing,img.GetDirection(),0,img.GetPixelIDValue())
 
 if __name__ == '__main__':
     # dcm2mha_with_sitk()
     # dcm2mha_with_pydicom()
-    image = sitk.ReadImage('test1.mha')
-    ct_array = sitk.GetArrayFromImage(image)
-    print(image.GetSize())
-    print(ct_array.shape)
-    plt.imshow(ct_array[2,:,:],cmap='gray')
-    plt.show()
+    img = read_dcm_series(dcm_path)
+    # img_resampled = resample_with_spacing(img,[0.5,0.5,0.5])
+    img_resampled = resample_with_size(img,[1024,1024,500])
+    sitk.WriteImage(img_resampled,"resampled.mha")
