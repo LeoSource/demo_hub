@@ -4,6 +4,9 @@ import numpy as np
 import cv2
 import roboticstoolbox as rtb
 import spatialmath as sm
+import spatialmath.base as smb
+
+np.set_printoptions(suppress=True)
 
 def calibrate_handineye():
     rt_cam2gripper_ref = sm.SE3.Trans([5,-6,7])*sm.SE3.Rx(10,'deg')
@@ -90,4 +93,10 @@ def calibrate_handtoeye():
 
 if __name__ == '__main__':
     # calibrate_handineye()
-    calibrate_handtoeye()
+    # calibrate_handtoeye()
+    r1 = smb.rpy2r([1,2,3])
+    r2 = np.array([[1,0,0],[0,1,0],[0,0,1]])
+    r3 = r1*r2
+    print(r3)
+    # print(smb.rpy2r(1,2,3))
+    # print(smb.angvec2r(0.7,[1,0,0]))
