@@ -21,7 +21,7 @@ def points2cs(points):
     yn = np.cross(zn,xn)
     rot = np.array([xn,yn,zn]).T
 
-    return points[:,1].reshape(-1,1),rot
+    return points[:,0:1].reshape(-1,1),rot
 
 def calc_transform(pb,pct,verbose):
     num_idx = np.arange(pb.shape[1])
@@ -72,8 +72,8 @@ def calc_transform(pb,pct,verbose):
         it_times += 1
         if verbose:
             print('pose error: %f' %(np.linalg.norm(pose_err.flatten(order='F'))))
-    if verbose:
-        print('\n')
+    # if verbose:
+    #     print('\n')
 
     return pbc,rbc
 
@@ -82,23 +82,51 @@ def analysis_transform_error(pb,pbc_ref,rbc_ref,verbose):
     pct = []
     pct_sample = []
     for idx in range(pb.shape[1]):
-        pct.append(rbc_ref.T@pb[:,idx:idx+1]-pbc_ref)
+        pct.append(rbc_ref.T@(pb[:,idx:idx+1]-pbc_ref))
         pct_sample.append((pct[idx]+norm_rand_vector(3)*np.random.normal(0.3,0.002)).reshape(-1,1))
 
     pct_sample = np.squeeze(np.array(pct_sample)).T
-    pbc_sample,rbc_sample = calc_transform(pb,pct_sample,True)
+    pbc_sample,rbc_sample = calc_transform(pb,pct_sample,False)
     theta,k = smb.tr2angvec(rbc_ref@rbc_sample.T)
 
     pb_sample = np.zeros((3,pb.shape[1]))
     for idx in range(pb.shape[1]):
         pb_sample[:,idx:idx+1] = pbc_sample+rbc_sample@pct_sample[:,idx:idx+1]
 
+    xmin = pct[1][0]+40
+    xmax = pct[1][0]+120
+    ymin = pct[1][1]+40
+    ymax = pct[1][1]+100
+    zmin = pct[1][2]+30
+    zmax = pct[1][2]+100
+    pmin = np.array([xmin,ymin,zmin])
+    pmax = np.array([xmax,ymax,zmax])
+    num_points = 1000
+    p = pmin+np.random.rand(3,num_points)*(pmax-pmin)
+    pbm_ref = np.zeros((3,num_points))
+    pbm_sample = np.zeros_like(pbm_ref)
+    pos_err = np.zeros_like(pbm_ref)
+    for idx in range(num_points):
+        pbm_ref[:,idx:idx+1] = pbc_ref+rbc_ref@p[:,idx:idx+1]
+        pbm_sample[:,idx:idx+1] = pbc_sample+rbc_sample@p[:,idx:idx+1]
+        pos_err[:,idx:idx+1] = pbm_ref[:,idx:idx+1]-pbm_sample[:,idx:idx+1]
+
+    mean_err = np.mean(np.linalg.norm(pos_err,axis=0))
+    max_err = np.max(np.linalg.norm(pos_err,axis=0))
+    if verbose:
+        print('position transform error: %fmm, orientation transform error: %fdeg' 
+              %(np.linalg.norm(pbc_ref-pbc_sample), np.rad2deg(theta)))
+        print('marker position error:')
+        print(np.linalg.norm(pb-pb_sample,axis=0))
+        print('mean error: %fmm, maximum error: %fmm' %(mean_err, max_err))
+        
+    return mean_err,max_err
 
 
 if __name__ == '__main__':
     pbc_ref = np.array([80,309,-69]).reshape(3,1)
     rbc_ref = np.array([[1,0,0],[0,0,1],[0,-1,0]])
-    rbc_ref = smb.angvec2r(5,norm_rand_vector(3),unit='deg')
+    rbc_ref = smb.angvec2r(5,norm_rand_vector(3),unit='deg')@rbc_ref
     pb = np.array([[158,0,0],[0,0,0],[0,0,26],[164,-11,24]]).T
 
     num_test = 1000
@@ -109,4 +137,5 @@ if __name__ == '__main__':
         mean_pos_err.append(mean_err)
         max_pos_err.append(max_err)
 
-    print('mean position error: ')
+    print('mean position error: %fmm' %(np.mean(mean_pos_err)))
+    print('maximum position error: %fmm' %(np.max(max_pos_err)))
