@@ -1,4 +1,8 @@
-# !/bin/python3
+# -*- coding: utf-8 -*-
+# @File   		: dcm2mha.py
+# @Description	: convert DICOM series files to .mha file
+# @Date   		: 2024/02/02 14:34:40
+# @Author	    : zxliao, zhixiangleo@163.com
 
 import os
 import pydicom
@@ -90,9 +94,9 @@ def resample_with_size(img,dest_size):
                          dest_spacing,img.GetDirection(),0,img.GetPixelIDValue())
 
 if __name__ == '__main__':
-    # dcm2mha_with_sitk()
+    dcm2mha_with_sitk()
     # dcm2mha_with_pydicom()
-    img = read_dcm_series(dcm_path)
+    # img = read_dcm_series(dcm_path)
     # img_resampled = resample_with_spacing(img,[0.5,0.5,0.5])
     img_resampled = resample_with_size(img,[1024,1024,500])
     sitk.WriteImage(img_resampled,"resampled.mha")

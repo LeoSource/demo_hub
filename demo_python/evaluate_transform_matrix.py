@@ -127,7 +127,9 @@ if __name__ == '__main__':
     pbc_ref = np.array([80,309,-69]).reshape(3,1)
     rbc_ref = np.array([[1,0,0],[0,0,1],[0,-1,0]])
     rbc_ref = smb.angvec2r(5,norm_rand_vector(3),unit='deg')@rbc_ref
-    pb = np.array([[158,0,0],[0,0,0],[0,0,26],[164,-11,24]]).T
+    # pb = np.array([[158,0,0],[0,0,0],[0,0,26],[164,-11,24]]).T
+    # pb = np.array([[158,-10,10],[0,0,0],[10,-10,26],[164,-11,24]]).T
+    pb = np.array([[158,0,0],[0,0,0],[0,0,26],[164,-11,24],[100,5,-5],[60,5,-5]]).T
 
     num_test = 1000
     mean_pos_err = []

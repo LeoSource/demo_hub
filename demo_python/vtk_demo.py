@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @File   		: vtk_demo.py
-# @Description	: do something
+# @Description	: render puncture needle
 # @Date   		: 2024/02/20 17:33:43
 # @Author	    : zxliao, zhixiangleo@163.com
 
