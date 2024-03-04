@@ -10,6 +10,19 @@ namespace test_other
 
 void test_arguments()
 {
+	std::vector<int> vec{1,2,3,4};
+	std::cout<<"vector size: "<<vec.size()<<std::endl;
+	std::cout<<"empty: "<<vec.empty()<<std::endl;
+	vec.clear();
+	std::cout<<"vector size: "<<vec.size()<<std::endl;
+	std::cout<<"empty: "<<vec.empty()<<std::endl;
+
+	double a = std::numeric_limits<double>::max();
+	if(a==std::numeric_limits<double>::max())
+		std::cout<<"max in double"<<std::endl;
+	if(a==std::numeric_limits<float>::max())
+		std::cout<<"max in float"<<std::endl;
+
 	manager cm;
 	st_val stval{3,false,1.1};
 	cm.run(stval);
@@ -240,7 +253,7 @@ void convert_string()
 		{"name", "stop"},
 		{"part", "master"},
 		{"pos", {{-20.0,30, -0.04}}},
-		{"type", "fixed-base"},
+		{"type", "positioning"},
 		{"mode", "relative"}
 	};
 	auto calc_rows = [](const std::string& type)->int
@@ -259,6 +272,7 @@ void convert_string()
 
 		return is_valid;
 	};
+
 	std::cout<<is_valid(calc_rows(j.at("type")))<<std::endl;
 	// std::cout<<calc_rows("vertex")<<std::endl;
 	// std::cout<<calc_rows("fixed-base")<<std::endl;

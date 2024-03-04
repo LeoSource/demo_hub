@@ -24,6 +24,7 @@
 #include <initializer_list>
 #include "json.hpp"
 #include <Eigen/Dense>
+#include <limits>
 
 using nlohmann::json;
 
