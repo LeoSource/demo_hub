@@ -5,6 +5,7 @@
 # @Author	    : zxliao, zhixiangleo@163.com
 
 import vtk
+import numpy as np
 
 # stl = "./puncture_robot_model/needle.stl"
 stl = "./ur5_model/base.stl"
@@ -103,6 +104,34 @@ class vtkMyCallBack(object):
         widget = caller
         widget.GetTransform(tf)
         widget.GetProp3D().SetUserTransform(tf)
+
+def numpy_to_image(numpy_array):
+    """
+    @brief Convert a numpy 2D or 3D array to a vtkImageData object
+    @param numpy_array 2D or 3D numpy array containing image data
+    @return vtkImageData with the numpy_array content
+    """
+
+    shape = numpy_array.shape
+    if len(shape) < 2:
+        raise Exception('numpy array must have dimensionality of at least 2')
+
+    h, w = shape[0], shape[1]
+    c = 1
+    if len(shape) == 3:
+        c = shape[2]
+
+    # Reshape 2D image to 1D array suitable for conversion to a
+    # vtkArray with numpy_support.numpy_to_vtk()
+    linear_array = np.reshape(numpy_array, (w*h, c))
+    vtk_array = vtk.util.numpy_support.numpy_to_vtk(linear_array)
+
+    image = vtk.vtkImageData()
+    image.SetDimensions(w, h, 1)
+    image.AllocateScalars()
+    image.GetPointData().GetScalars().DeepCopy(vtk_array)
+
+    return image 
 
 if __name__ == '__main__':
     simple_display(stl)

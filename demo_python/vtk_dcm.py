@@ -6,7 +6,7 @@
 
 import vtk
 
-dcm_path = "F:/0_project/prca/dicom/20240122/1.2.840.113619.2.428.3.695552.36.1705889324.84"
+dcm_path = "F:/0_project/prca/dicom/20240225/2024.02.25-144314-STD-1.3.12.2.1107.5.99.3/20240225/1.3.12.2.1107.5.1.7.120479.30000024022512255527200003523"
 stl_file = "./puncture_robot_model/needle.stl"
 
 def load_stl_to_actor(filename):
@@ -24,11 +24,11 @@ def show_dcm_3d():
     reader = vtk.vtkDICOMImageReader()
     reader.SetDirectoryName(dcm_path)
 
-    # contourfilter = vtk.vtkContourFilter()
-    contourfilter = vtk.vtkMarchingCubes()
+    contourfilter = vtk.vtkContourFilter()
+    # contourfilter = vtk.vtkMarchingCubes()
     contourfilter.SetInputConnection(reader.GetOutputPort())
     # contourfilter.ComputeNormalsOn()
-    contourfilter.SetValue(0, 200)
+    contourfilter.SetValue(0, 90)
  
     normal = vtk.vtkPolyDataNormals()
     normal.SetInputConnection(contourfilter.GetOutputPort())
