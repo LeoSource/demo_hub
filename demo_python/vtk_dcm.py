@@ -24,11 +24,12 @@ def show_dcm_3d():
     reader = vtk.vtkDICOMImageReader()
     reader.SetDirectoryName(dcm_path)
 
-    contourfilter = vtk.vtkContourFilter()
+    # contourfilter = vtk.vtkContourFilter()
     # contourfilter = vtk.vtkMarchingCubes()
+    contourfilter = vtk.vtkFlyingEdges3D()
     contourfilter.SetInputConnection(reader.GetOutputPort())
     # contourfilter.ComputeNormalsOn()
-    contourfilter.SetValue(0, 90)
+    contourfilter.SetValue(0, 10)
  
     normal = vtk.vtkPolyDataNormals()
     normal.SetInputConnection(contourfilter.GetOutputPort())
