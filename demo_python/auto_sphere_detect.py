@@ -219,8 +219,11 @@ class AutoSphereDetect():
             return center_list
            
     def run(self,flag,file_path):
-        img = sitk.ReadImage(file_path)
+        # img = sitk.ReadImage(file_path)
+        img = read_dcm_series(file_path)
+        print(img.GetSpacing())
         shift_img = self.window_transform(img,1000,300) #shift img to bone window -200-800
+        # pos = img.TransformContinuousIndexToPhysicalPoint([250,297,148])
         # img_array = sitk.GetArrayFromImage(img)
         # shift_img_array = sitk.GetArrayFromImage(shift_img)
         # plt.imshow(shift_img_array[2,:,:],cmap=plt.cm.gray)
@@ -241,16 +244,22 @@ class AutoSphereDetect():
         center_array = np.hstack([center_index_list,np.asarray(center_physi_list),np.asarray(radius_list).reshape(len(radius_list),1)])
         return center_array,self.error
 
+def read_dcm_series(file_path):
+    reader = sitk.ImageSeriesReader()
+    dcm_names = reader.GetGDCMSeriesFileNames(file_path)
+    reader.SetFileNames(dcm_names)
+    return reader.Execute()
+
 if __name__ == '__main__': 
   
     # plt.ion()
     #file_path = 'D:/DataSet/sphere_test/203_1.5_2.nii.gz'  
-    file_path = "F:/0_project/demo_hub/demo_python/1.2.840.113619.2.428.3.695552.238.1703812879.480.mha"
+    file_path = "F:/0_project/prca/dicom/20240225/2024.02.25-144314-STD-1.3.12.2.1107.5.99.3/20240225/1.3.12.2.1107.5.1.7.120479.30000024022512255527200003523"
     #file_path = "D:\\DataSet\\test.nii.gz"
     auto_detect = AutoSphereDetect()
     center_array,error = auto_detect.run(1,file_path)
     # plt.ioff()
-    plt.show()
+    # plt.show()
 
     
     

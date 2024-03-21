@@ -96,7 +96,7 @@ def resample_with_size(img,dest_size):
 if __name__ == '__main__':
     dcm2mha_with_sitk()
     # dcm2mha_with_pydicom()
-    # img = read_dcm_series(dcm_path)
+    img = read_dcm_series(dcm_path)
     # img_resampled = resample_with_spacing(img,[0.5,0.5,0.5])
     img_resampled = resample_with_size(img,[1024,1024,500])
-    sitk.WriteImage(img_resampled,"resampled.mha")
+    # sitk.WriteImage(img_resampled,"resampled.mha")
