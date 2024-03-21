@@ -9,7 +9,7 @@ import tkinter as tk
 from vtkmodules.tk.vtkTkRenderWindowInteractor import vtkTkRenderWindowInteractor
 import SimpleITK as sitk
 
-dcm_path = "F:/0_project/prca/dicom/20240122/1.2.840.113619.2.428.3.695552.549.1705911641.471"
+dcm_path = "D:/Leo/0project/prca/dicom/20231229/002/1.2.840.113619.2.428.3.695552.238.1703812878.766"
 
 # helper class to format slice status message
 class SliceMessage:
@@ -113,18 +113,6 @@ class MyInteractorStyleImage(vtk.vtkInteractorStyleImage):
     def on_left_button_release(self, obj, event):
         self.is_left_button_pressed = False
         super().OnLeftButtonUp()  # Call parent method to ensure proper behavior
-
-    def OnMouseMove(self) -> None:
-        pass
-        # super().OnMouseMove()
-        # print(self.GetInteractor().GetEventPosition())
-        # print(f'wl:{self.img_viewer.GetColorLevel()},wd:{self.img_viewer.GetColorWindow()}')
-        # return super().OnMouseMove()
-
-    # def WindowLevel(self) -> None:
-        # print('123')
-        # print(f'wl:{self.img_viewer.GetColorLevel()},wd:{self.img_viewer.GetColorWindow()}')
-        # return super().WindowLevel()
 
     def set_image_viewer(self,img_viewer):
         img_viewer.SetSliceOrientationToXY()
@@ -256,29 +244,23 @@ def read_dicom_slice():
     # print(dcm_reader.GetPixelSpacing())
     # print(dcm_reader.GetImagePositionPatient())
     img_data = dcm_reader.GetOutput()#vtk.vtkImageData
-    # print(img_data.GetPointData(10,20,30))
+    img_data.SetSpacing(2,2,1)
     flip = vtk.vtkImageFlip()
     flip.SetFilteredAxes(2)
     flip.SetInputData(img_data)
     flip.Update()
 
     img_viewer = vtk.vtkImageViewer2()
-    # img_viewer.SetInputConnection(dcm_reader.GetOutputPort())
     img_viewer.SetInputConnection(flip.GetOutputPort())
     img_viewer.GetRenderer().SetBackground(colors.GetColor3d('gray'))
-    img_viewer.SetSize(512,512)
-    # img_viewer.SetRenderWindow(ren_win)
-    # img_viewer.GetRenderWindow().AddRenderer(dicom_renderer)
-    # img_viewer.GetRenderWindow().SetSize(img_width,img_height)
-    img_viewer.GetRenderWindow().SetWindowName('ReadDICOMSeries')
-    # img_viewer.GetRenderWindow().SetSize(img_width,img_height)
-    # img_viewer.SetSlice(100)
+    iren = vtk.vtkRenderWindowInteractor()
+    img_viewer.SetupInteractor(iren)
 
-    # usage_text_prop = vtk.vtkTextProperty()
-    # usage_text_prop.SetFontFamilyToCourier()
-    # usage_text_prop.SetFontSize(14)
-    # usage_text_prop.SetVerticalJustificationToTop()
-    # usage_text_prop.SetJustificationToLeft()
+    usage_text_prop = vtk.vtkTextProperty()
+    usage_text_prop.SetFontFamilyToCourier()
+    usage_text_prop.SetFontSize(14)
+    usage_text_prop.SetVerticalJustificationToTop()
+    usage_text_prop.SetJustificationToLeft()
 
     # usage_text_mapper = vtk.vtkTextMapper()
     # usage_text_mapper.SetInput(
@@ -292,29 +274,32 @@ def read_dicom_slice():
     # usage_text_actor.GetPositionCoordinate().SetCoordinateSystemToNormalizedDisplay()
     # usage_text_actor.GetPositionCoordinate().SetValue(0.05,0.95)
 
-    # usage_annotation = vtk.vtkCornerAnnotation()
-    # usage_annotation.SetTextProperty(usage_text_prop)
-    # usage_annotation.SetText(2,"hello world!")
-    # print(usage_annotation.GetWindowLevel())
+    usage_annotation = vtk.vtkCornerAnnotation()
+    usage_annotation.SetTextProperty(usage_text_prop)
+    usage_annotation.SetText(2,"hello world!")
 
+    # img_viewer.SetInputConnection(dcm_reader.GetOutputPort())
+    img_viewer.SetSize(512,512)
+    # img_viewer.SetRenderWindow(ren_win)
+    # img_viewer.GetRenderWindow().AddRenderer(dicom_renderer)
+    # img_viewer.GetRenderWindow().SetSize(img_width,img_height)
+    img_viewer.GetRenderWindow().SetWindowName('ReadDICOMSeries')
+    # img_viewer.GetRenderWindow().SetSize(img_width,img_height)
+    # img_viewer.SetSlice(100)
     # img_viewer.GetRenderer().AddActor2D(usage_text_actor)
-    # img_viewer.GetRenderer().AddActor2D(usage_annotation)
+    img_viewer.GetRenderer().AddActor2D(usage_annotation)
     # img_viewer.GetRenderWindow().SetNumberOfLayers(2)
     # dicom_renderer.SetLayer(0)
-    # img_viewer.SetRenderer(dicom_renderer)
 
-    # mt_interactor = MyInteractorStyleImage()
-    # mt_interactor.SetDefaultRenderer(img_viewer.GetRenderer())
-    # mt_interactor.set_image_viewer(img_viewer)
-    # mt_interactor.create_slice_text()
-    # mt_interactor.create_window_text()
-    # mt_interactor.create_slice_slider(iren)
-    # iren.SetInteractorStyle(mt_interactor)
-    iren = vtk.vtkRenderWindowInteractor()
-    iren.SetInteractorStyle(vtk.vtkInteractorStyleImage())
+    mt_interactor = MyInteractorStyleImage()
+    mt_interactor.SetDefaultRenderer(img_viewer.GetRenderer())
+    mt_interactor.set_image_viewer(img_viewer)
+    mt_interactor.create_slice_text()
+    mt_interactor.create_window_text()
+    mt_interactor.create_slice_slider(iren)
+    iren.SetInteractorStyle(mt_interactor)
+    # iren.SetInteractorStyle(vtk.vtkInteractorStyleImage())
 
-    img_viewer.SetupInteractor(iren)
-    img_viewer.GetRenderer().ResetCamera()
     img_viewer.Render()
     # vtk.vtkRenderer().ResetCameraScreenSpace()
 
@@ -331,7 +316,12 @@ def dicom_view():
     dcm_reader = vtk.vtkDICOMImageReader()
     dcm_reader.SetDirectoryName(dcm_path)
     dcm_reader.Update()
-    print(dcm_reader.GetWidth())
+    vtk_img_data = dcm_reader.GetOutput()
+    # vtk_img_data.SetSpacing(1,1,1)
+    spacing = dcm_reader.GetPixelSpacing()
+    dimensions = dcm_reader.GetOutput().GetDimensions()
+    print(f'spacing:{spacing}')
+    print(f'dimensions:{dimensions}')
 
     flip = vtk.vtkImageFlip()
     flip.SetFilteredAxes(2)
@@ -339,33 +329,29 @@ def dicom_view():
     flip.Update()
 
     ren_win = vtk.vtkRenderWindow()
+    # ren_win.SetSize(int(dimensions[0]*spacing[0]),int(dimensions[1]*spacing[1]))
     ren_win.SetSize(512,512)
+    # print(f'ren_win size:{ren_win.GetSize()}')
+    # print(f'screen size:{ren_win.GetScreenSize()}')
     # ren_win.SetFullScreen(1)
     # ren_win.SetTileScale(2,2)
     iren = vtk.vtkRenderWindowInteractor()
 
     img_viewer = vtk.vtkImageViewer2()
     img_viewer.SetInputConnection(flip.GetOutputPort())
+    # img_viewer.SetSize(512,512)
     img_viewer.GetRenderer().SetBackground(colors.GetColor3d('gray'))
     img_viewer.SetRenderWindow(ren_win)
-
-    # 调整视口大小以匹配横断面尺寸
-    img_viewer.GetRenderer().GetActiveCamera().ParallelProjectionOn()
-    image_size = 512
-    pixel_spacing = 0.7422
-    parallel_scale = (image_size * pixel_spacing) / 2.0
-    img_viewer.GetRenderer().GetActiveCamera().SetParallelScale(parallel_scale)  # 设置平行投影的尺度
-    # 调整视口大小以匹配横断面尺寸
-    # img_viewer.GetRenderer().ResetCamera()
-    # img_viewer.GetRenderer().ResetCameraClippingRange()
 
     style = vtk.vtkInteractorStyleImage()
     style.SetDefaultRenderer(img_viewer.GetRenderer())
     iren.SetRenderWindow(ren_win)
     iren.SetInteractorStyle(style)
+    # print(dcm_reader.GetDataSpacing())
+    # print(vtk_img_data.GetSpacing())
 
     img_viewer.SetupInteractor(iren)
-    # img_viewer.GetRenderer().ResetCamera()
+    img_viewer.GetRenderer().ResetCameraScreenSpace()
     img_viewer.Render()
     iren.Start()
 
@@ -402,7 +388,7 @@ def vtk_in_tkinter():
     root_window.mainloop()
 
 if __name__=='__main__':
-    # read_dicom_slice()
-    dicom_view()
+    read_dicom_slice()
+    # dicom_view()
 
 
