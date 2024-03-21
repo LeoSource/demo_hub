@@ -7,8 +7,9 @@
 import vtk
 import tkinter as tk
 from vtkmodules.tk.vtkTkRenderWindowInteractor import vtkTkRenderWindowInteractor
+import SimpleITK as sitk
 
-dcm_path = "F:/0_project/prca/dicom/20240225/2024.02.25-144314-STD-1.3.12.2.1107.5.99.3/20240225/1.3.12.2.1107.5.1.7.120479.30000024022512255527200003523"
+dcm_path = "F:/0_project/prca/dicom/20240122/1.2.840.113619.2.428.3.695552.549.1705911641.471"
 
 # helper class to format slice status message
 class SliceMessage:
@@ -41,6 +42,7 @@ class MyInteractorStyleImage(vtk.vtkInteractorStyleImage):
         self.wd = 0
         self.is_left_button_pressed = False
         self.last_pos = None
+        self.sitk_img = sitk_read_dcm_series(dcm_path)
 
     def mouse_wheel_forward_event(self,obj,event):
         self.move_slice_forward()
@@ -52,6 +54,31 @@ class MyInteractorStyleImage(vtk.vtkInteractorStyleImage):
         self.is_left_button_pressed = True
         self.last_pos = self.GetInteractor().GetEventPosition()
         super().OnLeftButtonDown()  # Call parent method to ensure proper behavior
+
+        # picker = self.GetInteractor().GetPicker()
+        picker = vtk.vtkCellPicker()
+        picker.SetTolerance(0.001)
+        # picker.SetPickFromList(1)
+        picker.Pick(self.last_pos[0], self.last_pos[1], 0, self.GetDefaultRenderer())
+        if picker.GetCellId()!=-1:
+            print(f'cellid:{picker.GetCellId()}')
+            pos = picker.GetPickPosition()
+            # print(f'pos:{pos}')
+
+            vtk_idx = [0,0,0]
+            dataset = picker.GetDataSet()
+            structuredPoints = vtk.vtkStructuredPoints()
+            structuredPoints.CopyStructure(dataset)
+            structuredPoints.ComputeStructuredCoordinates(pos, vtk_idx,[0,0,0])
+            itk_idx = vtk_idx
+            itk_idx[1] = 512-1-vtk_idx[1]
+            print(f'Structured Coordinates: {itk_idx}')
+
+            scalarValue = self.sitk_img.GetPixel(int(itk_idx[0]),int(itk_idx[1]),int(itk_idx[2]))
+            print(f'CT Value: {scalarValue}')
+
+            pos_ct = self.sitk_img.TransformContinuousIndexToPhysicalPoint(itk_idx)
+            print(f'ct pos:{pos_ct}')
 
     def on_mouse_move(self, obj, event):
         if self.is_left_button_pressed:
@@ -70,7 +97,13 @@ class MyInteractorStyleImage(vtk.vtkInteractorStyleImage):
             msg = WindowMessage.format(self.wd, self.wl)
             self.window_mapper.SetInput(msg)
             self.img_viewer.Render()
-            print(f'{self.img_viewer.GetColorLevel()},{self.img_viewer.GetColorWindow()}')
+            # print(f'{self.img_viewer.GetColorLevel()},{self.img_viewer.GetColorWindow()}')
+
+            picker = vtk.vtkCellPicker()
+            picker.SetTolerance(0.001)
+            picker.Pick(new_pos[0], new_pos[1], 0, self.GetCurrentRenderer())
+            pos = picker.GetPickPosition()
+            print(pos)
 
             self.last_pos = new_pos
         else:
@@ -91,8 +124,6 @@ class MyInteractorStyleImage(vtk.vtkInteractorStyleImage):
         # print('123')
         # print(f'wl:{self.img_viewer.GetColorLevel()},wd:{self.img_viewer.GetColorWindow()}')
         # return super().WindowLevel()
-
-
 
     def set_image_viewer(self,img_viewer):
         img_viewer.SetSliceOrientationToXY()
@@ -237,22 +268,6 @@ def read_dicom_slice():
     img_viewer.SetupInteractor(iren)
     # img_viewer.SetSlice(100)
 
-    # print(img_viewer.GetColorLevel())
-    # img_viewer.GetRenderer().AddActor2D(usage_text_actor)
-    dicom_renderer = vtk.vtkRenderer()
-    dicom_renderer.SetBackground(colors.GetColor3d('red'))
-    # img_viewer.GetRenderer().AddActor2D(usage_annotation)
-    # img_viewer.GetRenderer().ResetCamera()
-    # img_viewer.GetRenderer().SetBackground(colors.GetColor3d('black'))
-    # img_viewer.GetRenderWindow().SetNumberOfLayers(2)
-    # dicom_renderer.SetLayer(0)
-    # img_viewer.GetRenderWindow().AddRenderer(dicom_renderer)
-    img_viewer.GetRenderWindow().SetSize(img_width,img_height)
-    img_viewer.GetRenderWindow().SetWindowName('ReadDICOMSeries')
-    # img_viewer.SetRenderer(dicom_renderer)
-    img_viewer.SetColorLevel(112)
-    img_viewer.SetColorWindow(443)
-
     usage_text_prop = vtk.vtkTextProperty()
     usage_text_prop.SetFontFamilyToCourier()
     usage_text_prop.SetFontSize(14)
@@ -274,7 +289,22 @@ def read_dicom_slice():
     usage_annotation = vtk.vtkCornerAnnotation()
     usage_annotation.SetTextProperty(usage_text_prop)
     usage_annotation.SetText(2,"hello world!")
-    print(usage_annotation.GetWindowLevel())
+    # print(usage_annotation.GetWindowLevel())
+
+    # print(img_viewer.GetColorLevel())
+    # img_viewer.GetRenderer().AddActor2D(usage_text_actor)
+    dicom_renderer = vtk.vtkRenderer()
+    dicom_renderer.SetBackground(colors.GetColor3d('red'))
+    img_viewer.GetRenderer().AddActor2D(usage_annotation)
+    img_viewer.GetRenderer().ResetCamera()
+    img_viewer.GetRenderer().SetBackground(colors.GetColor3d('gray'))
+    # img_viewer.GetRenderWindow().SetNumberOfLayers(2)
+    # dicom_renderer.SetLayer(0)
+    # img_viewer.GetRenderWindow().AddRenderer(dicom_renderer)
+    img_viewer.SetSize(img_width,img_height)
+    # img_viewer.GetRenderWindow().SetSize(img_width,img_height)
+    img_viewer.GetRenderWindow().SetWindowName('ReadDICOMSeries')
+    # img_viewer.SetRenderer(dicom_renderer)
 
     mt_interactor = MyInteractorStyleImage()
     mt_interactor.SetDefaultRenderer(img_viewer.GetRenderer())
@@ -288,6 +318,12 @@ def read_dicom_slice():
     img_viewer.Render()
 
     iren.Start()
+
+def sitk_read_dcm_series(file_path):
+    reader = sitk.ImageSeriesReader()
+    dcm_names = reader.GetGDCMSeriesFileNames(file_path)
+    reader.SetFileNames(dcm_names)
+    return reader.Execute()
 
 def vtk_in_tkinter():
     root_window = tk.Tk()
