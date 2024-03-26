@@ -7,7 +7,7 @@
 import vtk
 import SimpleITK as sitk
 
-dcm_path = "F:/0_project/prca/dicom/20240225/2024.02.25-144314-STD-1.3.12.2.1107.5.99.3/20240225/1.3.12.2.1107.5.1.7.120479.30000024022512255527200003523"
+dcm_path = "D:/Leo/0project/prca/dicom/20231229/002/1.2.840.113619.2.428.3.695552.238.1703812878.766"
 
 def sitk_read_dcm_series(file_path:str):
     reader = sitk.ImageSeriesReader()
@@ -113,19 +113,18 @@ class DICOMViewer():
         #     img_viewer = vtk.vtkImageViewer2()
         #     img_viewer.SetInputConnection(reader.GetOutputPort())
 
-        iren = vtk.vtkRenderWindowInteractor()
-
         self.view_axial = vtk.vtkImageViewer2()
         self.view_axial.SetInputConnection(flip.GetOutputPort())
         self.view_axial.GetRenderer().SetBackground(colors.GetColor3d('gray'))
         self.view_axial.SetRenderWindow(ren_windows[0])
         self.view_axial.GetRenderWindow().SetWindowName("Axial")
-        style_axial = CustomInteractorStyle(self.view_axial)
-        # style_axial = vtk.vtkInteractorStyleImage()
-        style_axial.SetDefaultRenderer(self.view_axial.GetRenderer())
+        # style_axial = CustomInteractorStyle(self.view_axial)
+        style_axial = vtk.vtkInteractorStyleImage()
+        # style_axial.SetDefaultRenderer(self.view_axial.GetRenderer())
+        iren = vtk.vtkRenderWindowInteractor()
+        iren.SetInteractorStyle(style_axial)
         self.view_axial.SetupInteractor(iren)
 
-        iren.SetInteractorStyle(style_axial)
 
         # self.view_coronal = vtk.vtkImageViewer2()
         # self.view_coronal.SetInputConnection(reader.GetOutputPort())
