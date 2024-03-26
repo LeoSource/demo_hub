@@ -133,5 +133,145 @@ def numpy_to_image(numpy_array):
 
     return image 
 
+def display_cross_line():
+    dicom_folder = "D:/Leo/0project/prca/dicom/20231229/002/1.2.840.113619.2.428.3.695552.238.1703812878.766"
+    # 读取 DICOM 数据
+    reader = vtk.vtkDICOMImageReader()
+    reader.SetDirectoryName(dicom_folder)
+    reader.Update()
+    # 获取 DICOM 数据信息
+    extent = reader.GetDataExtent()
+    spacing = reader.GetPixelSpacing()
+    # 将 DICOM 数据转换为 VTK 图像数据
+    image_data = reader.GetOutput()
+    # 创建 VTK 渲染器
+    renderer = vtk.vtkRenderer()
+    # 创建 VTK 窗口
+    render_window = vtk.vtkRenderWindow()
+    render_window.SetSize(512, 512)
+    render_window.AddRenderer(renderer)
+    # 创建 VTK 交互器
+    interactor = vtk.vtkRenderWindowInteractor()
+    interactor.SetRenderWindow(render_window)
+    # 创建 VTK 映射器和切片视图
+    viewer = vtk.vtkImageViewer2()
+    viewer.SetInputData(image_data)
+    viewer.SetSliceOrientationToXY()
+    viewer.SetupInteractor(interactor)
+
+    # 创建十字叉的线
+    crosshair_lines = vtk.vtkCellArray()
+    crosshair_points = vtk.vtkPoints()
+    crosshair_points.SetNumberOfPoints(4)
+
+    # 十字叉在中心位置
+    center = [extent[0] + (extent[1] - extent[0]) / 2,
+            extent[2] + (extent[3] - extent[2]) / 2,
+            extent[4] + (extent[5] - extent[4]) / 2]
+
+    # 十字叉的长度
+    crosshair_length = 50
+
+    # 添加十字叉的线
+    crosshair_points.InsertPoint(0, center[0], center[1] - crosshair_length, center[2])
+    crosshair_points.InsertPoint(1, center[0], center[1] + crosshair_length, center[2])
+    crosshair_points.InsertPoint(2, center[0] - crosshair_length, center[1], center[2])
+    crosshair_points.InsertPoint(3, center[0] + crosshair_length, center[1], center[2])
+
+    crosshair_lines.InsertNextCell(2)
+    crosshair_lines.InsertCellPoint(0)
+    crosshair_lines.InsertCellPoint(1)
+
+    crosshair_lines.InsertNextCell(2)
+    crosshair_lines.InsertCellPoint(2)
+    crosshair_lines.InsertCellPoint(3)
+
+    # 创建 VTK 线数据
+    crosshair_polydata = vtk.vtkPolyData()
+    crosshair_polydata.SetPoints(crosshair_points)
+    crosshair_polydata.SetLines(crosshair_lines)
+
+    # 创建 VTK 线映射器
+    crosshair_mapper = vtk.vtkPolyDataMapper()
+    crosshair_mapper.SetInputData(crosshair_polydata)
+
+    # 创建 VTK 线 Actor
+    crosshair_actor = vtk.vtkActor()
+    crosshair_actor.SetMapper(crosshair_mapper)
+    crosshair_actor.GetProperty().SetLineStipplePattern(0xF0F0)  # 设置虚线样式
+    crosshair_actor.GetProperty().SetLineStippleRepeatFactor(2)    # 
+    crosshair_actor.GetProperty().SetColor(1.0, 0.0, 0.0)  # 设置红色
+
+    # 将十字叉 Actor 添加到渲染器中
+    viewer.GetRenderer().AddActor(crosshair_actor)
+
+    # 设置渲染器的背景色
+    # renderer.SetBackground(0.1, 0.2, 0.4)
+    viewer.GetRenderer().SetBackground(0.1, 0.2, 0.4)
+
+    # 启动交互器
+    viewer.Render()
+    interactor.Initialize()
+    interactor.Start()
+
+def vtk_line():
+    # 创建渲染器
+    renderer = vtk.vtkRenderer()
+
+    # 创建窗口
+    render_window = vtk.vtkRenderWindow()
+    render_window.SetSize(500, 500)
+    render_window.AddRenderer(renderer)
+
+    # 创建交互器
+    interactor = vtk.vtkRenderWindowInteractor()
+    interactor.SetRenderWindow(render_window)
+
+    # 创建直线 1
+    line1 = vtk.vtkLineSource()
+    line1.SetPoint1(-100, 0, 0)
+    line1.SetPoint2(100, 0, 0)
+
+    # 创建直线 2
+    line2 = vtk.vtkLineSource()
+    line2.SetPoint1(0, -100, 0)
+    line2.SetPoint2(0, 100, 0)
+
+    # 创建表示方式
+    line_representation = vtk.vtkLineRepresentation()
+    line_representation.GetLineProperty().SetLineStipplePattern(0xF0F0)  # 设置虚线样式
+    line_representation.GetLineProperty().SetLineStippleRepeatFactor(1)  # 设置重复因子
+
+    # 创建 Actor 1
+    actor1 = vtk.vtkLineWidget()
+    actor1.SetInteractor(interactor)
+    actor1.GetRepresentation().SetLine(line1.GetOutput())
+    actor1.GetRepresentation().SetLineProperty(line_representation.GetLineProperty())
+
+    # 将直线 2 转换为虚线
+    mapper2 = vtk.vtkPolyDataMapper()
+    mapper2.SetInputConnection(line2.GetOutputPort())
+
+    actor2 = vtk.vtkActor()
+    actor2.SetMapper(mapper2)
+    actor2.GetProperty().SetLineStipplePattern(0xF0F0)  # 设置虚线样式
+    actor2.GetProperty().SetLineStippleRepeatFactor(1)  # 设置重复因子
+
+    # 添加 Actor 到渲染器
+    renderer.AddActor(actor1)
+    renderer.AddActor(actor2)
+
+    # 设置背景色
+    renderer.SetBackground(0.1, 0.2, 0.4)
+
+    # 启动交互器
+    render_window.Render()
+    interactor.Initialize()
+    interactor.Start()
+
+
+
 if __name__ == '__main__':
-    simple_display(stl)
+    # simple_display(stl)
+    # display_cross_line()
+    vtk_line()
