@@ -7,7 +7,7 @@
 import vtk
 import SimpleITK as sitk
 
-dcm_path = "F:/0_project/prca/dicom/20240225/2024.02.25-144314-STD-1.3.12.2.1107.5.99.3/20240225/1.3.12.2.1107.5.1.7.120479.30000024022512255527200003523"
+dcm_path = "D:/Leo/0project/prca/dicom/20231229/002/1.2.840.113619.2.428.3.695552.238.1703812878.766"
 
 def sitk_read_dcm_series(file_path:str)->sitk.Image:
     reader = sitk.ImageSeriesReader()
@@ -18,7 +18,7 @@ def sitk_read_dcm_series(file_path:str)->sitk.Image:
 colors = vtk.vtkNamedColors()
 
 class CustomInteractorStyle(vtk.vtkInteractorStyleImage):
-    def __init__(self, img_viewer):
+    def __init__(self, img_viewer:vtk.vtkImageViewer2,iren:vtk.vtkRenderWindowInteractor):
         self.AddObserver(vtk.vtkCommand.MouseWheelForwardEvent, self.on_scroll_forward)
         self.AddObserver(vtk.vtkCommand.MouseWheelBackwardEvent, self.on_scroll_backward)
         self.AddObserver(vtk.vtkCommand.LeftButtonPressEvent, self.on_left_button_press)
@@ -46,6 +46,7 @@ class CustomInteractorStyle(vtk.vtkInteractorStyleImage):
 
         self.create_left_down_corner_annotation()
         self.create_right_down_corner_annotation()
+        self.create_slice_slider(iren)
 
     def on_mouse_move(self, obj, event):
         if self.is_left_button_pressed:
@@ -60,7 +61,9 @@ class CustomInteractorStyle(vtk.vtkInteractorStyleImage):
             # Update the image viewer and text display
             self.img_viewer.SetColorLevel(self.wl)
             self.img_viewer.SetColorWindow(self.wd)
+            self.calc_cursor_position(new_pos)
             self.updata_left_down_corner_annotation()
+            self.update_right_down_corner_annotation()
             self.last_pos = new_pos
             self.img_viewer.Render()
         else:
@@ -71,6 +74,7 @@ class CustomInteractorStyle(vtk.vtkInteractorStyleImage):
         if self.slice<self.slice_max:
             self.slice += 1
             self.img_viewer.SetSlice(self.slice)
+            self.slice_slider_widget.GetRepresentation().SetValue(self.slice)
             self.updata_left_down_corner_annotation()
             self.img_viewer.Render()
 
@@ -79,30 +83,15 @@ class CustomInteractorStyle(vtk.vtkInteractorStyleImage):
         if self.slice>self.slice_min:
             self.slice -= 1
             self.img_viewer.SetSlice(self.slice)
+            self.slice_slider_widget.GetRepresentation().SetValue(self.slice)
             self.updata_left_down_corner_annotation()
             self.img_viewer.Render()
 
     def on_left_button_press(self, obj, event):
         self.is_left_button_pressed = True
         self.last_pos = self.GetInteractor().GetEventPosition()
+        self.calc_cursor_position(self.last_pos)
         super().OnLeftButtonDown()
-
-        picker = vtk.vtkCellPicker()
-        picker.SetTolerance(0.001)
-        picker.Pick(self.last_pos[0], self.last_pos[1], 0, self.img_viewer.GetRenderer())
-        if picker.GetCellId()!=-1:
-            pos = picker.GetPickPosition()
-            vtk_idx = [0,0,0]
-            dataset = picker.GetDataSet()
-            structuredPoints = vtk.vtkStructuredPoints()
-            structuredPoints.CopyStructure(dataset)
-            structuredPoints.ComputeStructuredCoordinates(pos, vtk_idx,[0,0,0])
-            itk_idx = vtk_idx
-            itk_idx[1] = 512-1-vtk_idx[1]
-            self.pos_img = itk_idx
-            self.ct_value = self.sitk_img.GetPixel(int(itk_idx[0]),int(itk_idx[1]),int(itk_idx[2]))
-            self.pos_ct = self.sitk_img.TransformContinuousIndexToPhysicalPoint(itk_idx)
-            self.update_right_down_corner_annotation()
 
     def on_left_button_release(self, obj, event):
         self.is_left_button_pressed = False
@@ -127,6 +116,24 @@ class CustomInteractorStyle(vtk.vtkInteractorStyleImage):
     #     self.isMiddleButtonDown = False
     #     super().OnMiddleButtonUp()
         
+    def calc_cursor_position(self,pick_pos):
+        picker = vtk.vtkCellPicker()
+        picker.SetTolerance(0.001)
+        picker.Pick(pick_pos[0], pick_pos[1], 0, self.img_viewer.GetRenderer())
+        if picker.GetCellId()!=-1:
+            pos = picker.GetPickPosition()
+            vtk_idx = [0,0,0]
+            dataset = picker.GetDataSet()
+            structuredPoints = vtk.vtkStructuredPoints()
+            structuredPoints.CopyStructure(dataset)
+            structuredPoints.ComputeStructuredCoordinates(pos, vtk_idx,[0,0,0])
+            itk_idx = vtk_idx
+            itk_idx[1] = 512-1-vtk_idx[1]
+            self.pos_img = itk_idx
+            self.ct_value = self.sitk_img.GetPixel(int(itk_idx[0]),int(itk_idx[1]),int(itk_idx[2]))
+            self.pos_ct = self.sitk_img.TransformContinuousIndexToPhysicalPoint(itk_idx)
+            self.update_right_down_corner_annotation()
+        
     def create_left_down_corner_annotation(self):
         text_prop = vtk.vtkTextProperty()
         text_prop.SetFontFamilyToCourier()
@@ -139,7 +146,6 @@ class CustomInteractorStyle(vtk.vtkInteractorStyleImage):
         self.left_down_corner_annotation.SetText(0,'W:{} L:{}\nSlice:{}/{}'.format(
             self.wd,self.wl,self.slice+1,self.slice_max+1))
         self.img_viewer.GetRenderer().AddActor2D(self.left_down_corner_annotation)
-        self.img_viewer.Render()
 
     def updata_left_down_corner_annotation(self):
         self.left_down_corner_annotation.SetText(0,'W:{} L:{}\nSlice:{}/{}'.format(
@@ -156,11 +162,48 @@ class CustomInteractorStyle(vtk.vtkInteractorStyleImage):
         self.right_down_corner_annotation.SetTextProperty(text_prop)
         self.right_down_corner_annotation.SetText(1,'World units:--\nX:-- Y:-- Z:--\nValue:--')
         self.img_viewer.GetRenderer().AddActor2D(self.right_down_corner_annotation)
-        self.img_viewer.Render()
 
     def update_right_down_corner_annotation(self):
          self.right_down_corner_annotation.SetText(1,'World units:{:.1f},{:.1f},{:.1f}\nX:{} Y:{} Z:{}\nValue:{}'.format(
             self.pos_ct[0],self.pos_ct[1],self.pos_ct[2],self.pos_img[0]+1,self.pos_img[1]+1,self.pos_img[2]+1,self.ct_value))
+
+    def create_slice_slider(self,iren:vtk.vtkRenderWindowInteractor):
+        slider_rep = vtk.vtkSliderRepresentation2D()
+        slider_rep.SetMinimumValue(self.slice_min)
+        slider_rep.SetMaximumValue(self.slice_max)
+        slider_rep.SetValue(self.slice)
+        slider_rep.GetSliderProperty().SetColor(colors.GetColor3d('slate_grey_dark'))
+        slider_rep.GetSelectedProperty().SetColor(colors.GetColor3d('light_grey'))
+        slider_rep.GetTubeProperty().SetColor(colors.GetColor3d('lamp_black'))
+        slider_rep.GetCapProperty().SetColor(colors.GetColor3d('light_grey'))
+        slider_rep.GetPoint1Coordinate().SetCoordinateSystemToNormalizedDisplay()
+        slider_rep.GetPoint1Coordinate().SetValue(0.95,0.3)
+        slider_rep.GetPoint2Coordinate().SetCoordinateSystemToNormalizedDisplay()
+        slider_rep.GetPoint2Coordinate().SetValue(0.95,0.7)
+        slider_rep.SetSliderLength(0.02)
+        slider_rep.SetSliderWidth(0.02)
+        slider_rep.SetTubeWidth(0.005)
+        slider_rep.SetEndCapWidth(0.02)
+        slider_rep.ShowSliderLabelOff()
+
+        self.slice_slider_widget = vtk.vtkSliderWidget()
+        self.slice_slider_widget.SetRepresentation(slider_rep)
+        self.slice_slider_widget.SetAnimationModeToAnimate()
+        self.slice_slider_widget.SetInteractor(iren)
+        self.slice_slider_widget.AddObserver(vtk.vtkCommand.InteractionEvent,self.slice_slider_callback)
+        self.slice_slider_widget.EnabledOn()
+
+    def slice_slider_callback(self,obj,event):
+        slider_rep = obj.GetRepresentation()
+        self.slice = round(slider_rep.GetValue())
+        self.img_viewer.SetSlice(self.slice)
+        self.updata_left_down_corner_annotation()
+        self.img_viewer.Render()
+
+    def create_cross_line(self):
+        crosshair_lines = vtk.vtkCellArray()
+        crosshair_points = vtk.vtkPoints()
+        crosshair_points.SetNumberOfPoints(4)        
 
 
 class DICOMViewer():
@@ -174,7 +217,6 @@ class DICOMViewer():
         flip = vtk.vtkImageFlip()
         flip.SetFilteredAxes(2)
         flip.SetInputData(vtk_img_data)
-        # flip.SetOutputSpacing(pixel_spacing[0],pixel_spacing[1],pixel_spacing[2])
         flip.Update()
 
         # rens = [vtk.vtkRenderer() for _ in range(4)]
@@ -198,7 +240,7 @@ class DICOMViewer():
         iren = vtk.vtkRenderWindowInteractor()
         self.view_axial.SetupInteractor(iren)
 
-        style_axial = CustomInteractorStyle(self.view_axial)
+        style_axial = CustomInteractorStyle(self.view_axial,iren)
         # style_axial = vtk.vtkInteractorStyleImage()
         # style_axial.SetDefaultRenderer(self.view_axial.GetRenderer())
         iren.SetInteractorStyle(style_axial)
