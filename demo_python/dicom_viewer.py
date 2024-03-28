@@ -6,8 +6,12 @@
 
 import vtk
 import SimpleITK as sitk
+import asyncio
+import threading
+import time
+import sys
 
-dcm_path = "D:/Leo/0project/prca/dicom/20231229/002/1.2.840.113619.2.428.3.695552.238.1703812878.766"
+dcm_path = "F:/0_project/prca/dicom/20240225/2024.02.25-144314-STD-1.3.12.2.1107.5.99.3/20240225/1.3.12.2.1107.5.1.7.120479.30000024022512255527200003523"
 
 def sitk_read_dcm_series(file_path:str)->sitk.Image:
     reader = sitk.ImageSeriesReader()
@@ -31,6 +35,7 @@ class CustomInteractorStyle(vtk.vtkInteractorStyleImage):
 
         self.img_viewer = img_viewer
         self.sitk_img = sitk_read_dcm_series(dcm_path)
+        self.img_size = self.sitk_img.GetSize()
 
         self.slice_max = int(img_viewer.GetSliceMax())
         self.slice_min = int(img_viewer.GetSliceMin())
@@ -39,20 +44,24 @@ class CustomInteractorStyle(vtk.vtkInteractorStyleImage):
         self.wl = int(img_viewer.GetColorLevel())
         self.wd = int(img_viewer.GetColorWindow())
         self.is_left_button_pressed = False
-        self.last_pos = None
+        self.last_view_pos = [0,0,0]
+        self.view_pos = [self.img_size[0]/2, self.img_size[1]/2,self.slice]
         self.pos_ct = [0,0,0]
         self.pos_img = [0,0,0]
         self.ct_value = 0
+        self.cross_len = 100
+        self.cross_line = False
 
         self.create_left_down_corner_annotation()
         self.create_right_down_corner_annotation()
         self.create_slice_slider(iren)
+        # self.create_cross_line()
 
     def on_mouse_move(self, obj, event):
         if self.is_left_button_pressed:
             new_pos = self.GetInteractor().GetEventPosition()
-            dx = new_pos[0] - self.last_pos[0]
-            dy = new_pos[1] - self.last_pos[1]
+            dx = new_pos[0] - self.last_view_pos[0]
+            dy = new_pos[1] - self.last_view_pos[1]
             # Adjust window level based on dx, dy
             # This is a simplified example; you may want to adjust the scale of adjustment
             scale = 1
@@ -62,9 +71,12 @@ class CustomInteractorStyle(vtk.vtkInteractorStyleImage):
             self.img_viewer.SetColorLevel(self.wl)
             self.img_viewer.SetColorWindow(self.wd)
             self.calc_cursor_position(new_pos)
-            self.updata_left_down_corner_annotation()
+            self.view_pos[0] = new_pos[0]
+            self.view_pos[1] = new_pos[1]
+            self.update_cross_line()
+            self.update_left_down_corner_annotation()
             self.update_right_down_corner_annotation()
-            self.last_pos = new_pos
+            self.last_view_pos = new_pos
             self.img_viewer.Render()
         else:
             super().OnMouseMove()
@@ -75,7 +87,9 @@ class CustomInteractorStyle(vtk.vtkInteractorStyleImage):
             self.slice += 1
             self.img_viewer.SetSlice(self.slice)
             self.slice_slider_widget.GetRepresentation().SetValue(self.slice)
-            self.updata_left_down_corner_annotation()
+            self.view_pos[2] = self.slice
+            self.update_left_down_corner_annotation()
+            self.update_cross_line()
             self.img_viewer.Render()
 
     def on_scroll_backward(self, obj, event):
@@ -84,37 +98,24 @@ class CustomInteractorStyle(vtk.vtkInteractorStyleImage):
             self.slice -= 1
             self.img_viewer.SetSlice(self.slice)
             self.slice_slider_widget.GetRepresentation().SetValue(self.slice)
-            self.updata_left_down_corner_annotation()
+            self.view_pos[2] = self.slice
+            self.update_left_down_corner_annotation()
+            self.update_cross_line()
             self.img_viewer.Render()
 
     def on_left_button_press(self, obj, event):
         self.is_left_button_pressed = True
-        self.last_pos = self.GetInteractor().GetEventPosition()
-        self.calc_cursor_position(self.last_pos)
+        self.last_view_pos = self.GetInteractor().GetEventPosition()
+        self.view_pos[0] = self.last_view_pos[0]
+        self.view_pos[1] = self.last_view_pos[1]
+        self.calc_cursor_position(self.last_view_pos)
+        self.update_cross_line()
         super().OnLeftButtonDown()
+        self.img_viewer.Render()
 
     def on_left_button_release(self, obj, event):
         self.is_left_button_pressed = False
         super().OnLeftButtonUp()
-
-    # def onRightButtonDown(self, obj, event):
-    #     self.isRightButtonDown = True
-    #     self.startPosition = self.GetInteractor().GetEventPosition()
-    #     super().OnRightButtonDown()
-
-    # def onRightButtonUp(self, obj, event):
-    #     self.isRightButtonDown = False
-    #     self.isRightButtonDown = False
-    #     super().OnRightButtonUp()
-
-    # def onMiddleButtonDown(self, obj, event):
-    #     self.isMiddleButtonDown = True
-    #     self.startPosition = self.GetInteractor().GetEventPosition()
-    #     super().OnMiddleButtonDown()
-
-    # def onMiddleButtonUp(self, obj, event):
-    #     self.isMiddleButtonDown = False
-    #     super().OnMiddleButtonUp()
         
     def calc_cursor_position(self,pick_pos):
         picker = vtk.vtkCellPicker()
@@ -147,7 +148,7 @@ class CustomInteractorStyle(vtk.vtkInteractorStyleImage):
             self.wd,self.wl,self.slice+1,self.slice_max+1))
         self.img_viewer.GetRenderer().AddActor2D(self.left_down_corner_annotation)
 
-    def updata_left_down_corner_annotation(self):
+    def update_left_down_corner_annotation(self):
         self.left_down_corner_annotation.SetText(0,'W:{} L:{}\nSlice:{}/{}'.format(
             self.wd,self.wl,self.slice+1,self.slice_max+1))
 
@@ -197,13 +198,48 @@ class CustomInteractorStyle(vtk.vtkInteractorStyleImage):
         slider_rep = obj.GetRepresentation()
         self.slice = round(slider_rep.GetValue())
         self.img_viewer.SetSlice(self.slice)
-        self.updata_left_down_corner_annotation()
+        self.view_pos[2] = self.slice
+        self.update_left_down_corner_annotation()
+        self.update_cross_line()
         self.img_viewer.Render()
 
     def create_cross_line(self):
-        crosshair_lines = vtk.vtkCellArray()
-        crosshair_points = vtk.vtkPoints()
-        crosshair_points.SetNumberOfPoints(4)        
+        cross_lines = vtk.vtkCellArray()
+        self.cross_points = vtk.vtkPoints()
+        self.cross_points.SetNumberOfPoints(4)
+        cross_length = 100
+        self.cross_points.InsertPoint(0, self.img_size[0]/2, self.img_size[1]/2 - self.cross_len, self.slice*3.5)
+        self.cross_points.InsertPoint(1, self.img_size[0]/2, self.img_size[1]/2 + self.cross_len, self.slice*3.5)
+        self.cross_points.InsertPoint(2, self.img_size[0]/2 - self.cross_len, self.img_size[1]/2, self.slice*3.5)
+        self.cross_points.InsertPoint(3, self.img_size[0]/2 + self.cross_len, self.img_size[1]/2, self.slice*3.5)
+        
+        cross_lines.InsertNextCell(2)
+        cross_lines.InsertCellPoint(0)
+        cross_lines.InsertCellPoint(1)
+
+        cross_lines.InsertNextCell(2)
+        cross_lines.InsertCellPoint(2)
+        cross_lines.InsertCellPoint(3)
+
+        cross_polydata = vtk.vtkPolyData()
+        cross_polydata.SetPoints(self.cross_points)
+        cross_polydata.SetLines(cross_lines)
+        cross_mapper = vtk.vtkPolyDataMapper()
+        cross_mapper.SetInputData(cross_polydata)
+        crosshair_actor = vtk.vtkActor()
+        crosshair_actor.SetMapper(cross_mapper)
+        crosshair_actor.GetProperty().SetLineStipplePattern(0xF0F0)  # 设置虚线样式
+        crosshair_actor.GetProperty().SetLineStippleRepeatFactor(2)
+        crosshair_actor.GetProperty().SetColor(colors.GetColor3d('blue'))
+        self.img_viewer.GetRenderer().AddActor(crosshair_actor)
+
+    def update_cross_line(self):
+        if self.cross_line:
+            self.cross_points.InsertPoint(0, self.view_pos[0], self.view_pos[1] - self.cross_len, self.view_pos[2]+self.img_size[2])
+            self.cross_points.InsertPoint(1, self.view_pos[0], self.view_pos[1] + self.cross_len, self.view_pos[2]+self.img_size[2])
+            self.cross_points.InsertPoint(2, self.view_pos[0] - self.cross_len, self.view_pos[1], self.view_pos[2]+self.img_size[2])
+            self.cross_points.InsertPoint(3, self.view_pos[0] + self.cross_len, self.view_pos[1], self.view_pos[2]+self.img_size[2])
+            self.cross_points.Modified()
 
 
 class DICOMViewer():
@@ -218,21 +254,20 @@ class DICOMViewer():
         flip.SetFilteredAxes(2)
         flip.SetInputData(vtk_img_data)
         flip.Update()
-
-        # rens = [vtk.vtkRenderer() for _ in range(4)]
-        # ren_windows = [vtk.vtkRenderWindow() for _ in range(4)]
-        # irens = [vtk.vtkRenderWindowInteractor() for _ in range(4)]
-        # for idx,window in enumerate(ren_windows):
-            # window.AddRenderer(rens[idx])
-            # window.SetSize(512,512)
-            # window.SetPosition(512*(idx%2),512*(idx//2))
-
-        # for idx,orientation in enumerate(["Axial","Coronal","Sagittal"]):#横断面,冠状面,矢状面
-        #     img_viewer = vtk.vtkImageViewer2()
-        #     img_viewer.SetInputConnection(reader.GetOutputPort())
-
         self.view_axial = vtk.vtkImageViewer2()
+        self.view_coronal = vtk.vtkImageViewer2()
+        self.view_sagittal = vtk.vtkImageViewer2()
+        self.view_axial.SetSliceOrientationToXY()
+        self.view_coronal.SetSliceOrientationToXZ()
+        self.view_sagittal.SetSliceOrientationToYZ()
         self.view_axial.SetInputConnection(flip.GetOutputPort())
+        self.view_coronal.SetInputConnection(flip.GetOutputPort())
+        self.view_sagittal.SetInputConnection(flip.GetOutputPort())
+
+
+        self.num_windows = 3
+
+    async def axial(self):
         self.view_axial.GetRenderer().SetBackground(colors.GetColor3d('gray'))
         self.view_axial.GetRenderWindow().SetWindowName("Axial")
         self.view_axial.SetSize(512,512)
@@ -244,6 +279,7 @@ class DICOMViewer():
         # style_axial = vtk.vtkInteractorStyleImage()
         # style_axial.SetDefaultRenderer(self.view_axial.GetRenderer())
         iren.SetInteractorStyle(style_axial)
+        iren.AddObserver(vtk.vtkCommand.ExitEvent,self.close_window)
 
         # self.view_coronal = vtk.vtkImageViewer2()
         # self.view_coronal.SetInputConnection(reader.GetOutputPort())
@@ -254,7 +290,53 @@ class DICOMViewer():
         # self.view_sagittal.SetRenderWindow(ren_windows[2])
 
         self.view_axial.Render()
+        await asyncio.sleep(0.1)
         iren.Start()
 
+    async def sagittal(self):
+        self.view_sagittal.GetRenderer().SetBackground(colors.GetColor3d('gray'))
+        self.view_sagittal.GetRenderWindow().SetWindowName("Sagittal")
+        self.view_sagittal.SetSize(512,512)
+        self.view_sagittal.SetPosition(512,0)
+
+        self.view_sagittal.SetSlice(20)
+        iren = vtk.vtkRenderWindowInteractor()
+        self.view_sagittal.SetupInteractor(iren)
+
+        iren.SetInteractorStyle(vtk.vtkInteractorStyleImage())
+        iren.AddObserver(vtk.vtkCommand.ExitEvent,self.close_window)
+        self.view_sagittal.Render()
+        await asyncio.sleep(0.1)
+        iren.Start()
+
+    async def coronal(self):
+        self.view_coronal.GetRenderer().SetBackground(colors.GetColor3d('gray'))
+        self.view_coronal.GetRenderWindow().SetWindowName("Coronal")
+        self.view_coronal.SetSize(512,512)
+        self.view_coronal.SetPosition(0,512)
+
+        self.view_coronal.SetSlice(100)
+        iren = vtk.vtkRenderWindowInteractor()
+        self.view_coronal.SetupInteractor(iren)
+
+        iren.SetInteractorStyle(vtk.vtkInteractorStyleImage())
+        iren.AddObserver(vtk.vtkCommand.ExitEvent,self.close_window)
+        self.view_coronal.Render()
+        await asyncio.sleep(0.1)
+        iren.Start()
+
+    def close_window(self, obj, event):
+        self.num_windows -= 1
+        if self.num_windows == 0:
+            sys.exit()
+
+async def main():
+    viewer = DICOMViewer(dcm_path)
+    task1 = asyncio.create_task(viewer.axial())
+    task2 = asyncio.create_task(viewer.coronal())
+    task3 = asyncio.create_task(viewer.sagittal())
+    await asyncio.gather(task1,task2,task3)
+
 if __name__=='__main__':
-    dcm_viewer = DICOMViewer(dcm_path)
+    asyncio.run(main())
+
