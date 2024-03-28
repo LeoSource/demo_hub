@@ -6,6 +6,8 @@
 
 import vtk
 import numpy as np
+import threading
+import asyncio
 
 # stl = "./puncture_robot_model/needle.stl"
 stl = "./ur5_model/base.stl"
@@ -134,7 +136,7 @@ def numpy_to_image(numpy_array):
     return image 
 
 def display_cross_line():
-    dicom_folder = "D:/Leo/0project/prca/dicom/20231229/002/1.2.840.113619.2.428.3.695552.238.1703812878.766"
+    dicom_folder = "F:/0_project/prca/dicom/20240225/2024.02.25-144314-STD-1.3.12.2.1107.5.99.3/20240225/1.3.12.2.1107.5.1.7.120479.30000024022512255527200003523"
     # 读取 DICOM 数据
     reader = vtk.vtkDICOMImageReader()
     reader.SetDirectoryName(dicom_folder)
@@ -204,6 +206,7 @@ def display_cross_line():
 
     # 将十字叉 Actor 添加到渲染器中
     viewer.GetRenderer().AddActor(crosshair_actor)
+    viewer.SetSlice(10)
 
     # 设置渲染器的背景色
     # renderer.SetBackground(0.1, 0.2, 0.4)
@@ -215,63 +218,88 @@ def display_cross_line():
     interactor.Start()
 
 def vtk_line():
-    # 创建渲染器
-    renderer = vtk.vtkRenderer()
+    dicom_folder = "F:/0_project/prca/dicom/20240225/2024.02.25-144314-STD-1.3.12.2.1107.5.99.3/20240225/1.3.12.2.1107.5.1.7.120479.30000024022512255527200003523"
+    # 读取 DICOM 数据
+    reader = vtk.vtkDICOMImageReader()
+    reader.SetDirectoryName(dicom_folder)
+    reader.Update()
 
-    # 创建窗口
-    render_window = vtk.vtkRenderWindow()
-    render_window.SetSize(500, 500)
-    render_window.AddRenderer(renderer)
+    viewer = vtk.vtkImageViewer2()
+    viewer.SetInputConnection(reader.GetOutputPort())
 
-    # 创建交互器
+    # 获取 viewer 的渲染器
+    renderer = viewer.GetRenderer()
+
+    # 创建一个 vtkLineWidget2
+    line_widget = vtk.vtkLineWidget2()
+    line_widget.CreateDefaultRepresentation()
+    line_widget.GetLineRepresentation().SetPoint1DisplayPosition([10,100,0])
+    line_widget.GetLineRepresentation().SetPoint1DisplayPosition([30,200,0])
+
+    # 设置交互器
     interactor = vtk.vtkRenderWindowInteractor()
-    interactor.SetRenderWindow(render_window)
+    viewer.SetupInteractor(interactor)
 
-    # 创建直线 1
-    line1 = vtk.vtkLineSource()
-    line1.SetPoint1(-100, 0, 0)
-    line1.SetPoint2(100, 0, 0)
+    # 将线添加到渲染器中
+    renderer.AddActor(line_widget.GetRepresentation())
 
-    # 创建直线 2
-    line2 = vtk.vtkLineSource()
-    line2.SetPoint1(0, -100, 0)
-    line2.SetPoint2(0, 100, 0)
-
-    # 创建表示方式
-    line_representation = vtk.vtkLineRepresentation()
-    line_representation.GetLineProperty().SetLineStipplePattern(0xF0F0)  # 设置虚线样式
-    line_representation.GetLineProperty().SetLineStippleRepeatFactor(1)  # 设置重复因子
-
-    # 创建 Actor 1
-    actor1 = vtk.vtkLineWidget()
-    actor1.SetInteractor(interactor)
-    actor1.GetRepresentation().SetLine(line1.GetOutput())
-    actor1.GetRepresentation().SetLineProperty(line_representation.GetLineProperty())
-
-    # 将直线 2 转换为虚线
-    mapper2 = vtk.vtkPolyDataMapper()
-    mapper2.SetInputConnection(line2.GetOutputPort())
-
-    actor2 = vtk.vtkActor()
-    actor2.SetMapper(mapper2)
-    actor2.GetProperty().SetLineStipplePattern(0xF0F0)  # 设置虚线样式
-    actor2.GetProperty().SetLineStippleRepeatFactor(1)  # 设置重复因子
-
-    # 添加 Actor 到渲染器
-    renderer.AddActor(actor1)
-    renderer.AddActor(actor2)
-
-    # 设置背景色
-    renderer.SetBackground(0.1, 0.2, 0.4)
-
-    # 启动交互器
-    render_window.Render()
-    interactor.Initialize()
+    # 渲染并启动交互器
+    viewer.Render()
     interactor.Start()
+
+async def render_window1():
+    renderer1 = vtk.vtkRenderer()
+    renderWindow1 = vtk.vtkRenderWindow()
+    renderWindow1.AddRenderer(renderer1)
+    renderWindowInteractor1 = vtk.vtkRenderWindowInteractor()
+    renderWindowInteractor1.SetRenderWindow(renderWindow1)
+
+    cubeSource = vtk.vtkCubeSource()
+    cubeMapper1 = vtk.vtkPolyDataMapper()
+    cubeMapper1.SetInputConnection(cubeSource.GetOutputPort())
+    cubeActor1 = vtk.vtkActor()
+    cubeActor1.SetMapper(cubeMapper1)
+    renderer1.AddActor(cubeActor1)
+
+    renderWindow1.SetSize(300, 300)
+    renderWindow1.SetWindowName("Window 1")
+    renderWindow1.SetPosition(0, 0)
+    
+    renderWindowInteractor1.Initialize()
+    await asyncio.sleep(0.1)  # 让出主线程控制权
+    renderWindowInteractor1.Start()
+
+async def render_window2():
+    renderer2 = vtk.vtkRenderer()
+    renderWindow2 = vtk.vtkRenderWindow()
+    renderWindow2.AddRenderer(renderer2)
+    renderWindowInteractor2 = vtk.vtkRenderWindowInteractor()
+    renderWindowInteractor2.SetRenderWindow(renderWindow2)
+
+    cubeSource = vtk.vtkCubeSource()
+    cubeMapper2 = vtk.vtkPolyDataMapper()
+    cubeMapper2.SetInputConnection(cubeSource.GetOutputPort())
+    cubeActor2 = vtk.vtkActor()
+    cubeActor2.SetMapper(cubeMapper2)
+    renderer2.AddActor(cubeActor2)
+
+    renderWindow2.SetSize(300, 300)
+    renderWindow2.SetWindowName("Window 2")
+    renderWindow2.SetPosition(400, 0)
+
+    renderWindowInteractor2.Initialize()
+    await asyncio.sleep(0.1)  # 让出主线程控制权
+    renderWindowInteractor2.Start()
+
+async def vtk_thread():
+    task1 = asyncio.create_task(render_window1())
+    task2 = asyncio.create_task(render_window2())
+    await asyncio.gather(task1, task2)
 
 
 
 if __name__ == '__main__':
     # simple_display(stl)
     # display_cross_line()
-    vtk_line()
+    # vtk_line()
+    asyncio.run(vtk_thread())
