@@ -11,7 +11,7 @@ import threading
 import time
 import sys
 
-dcm_path = "D:/Leo/0project/prca/dicom/20231229/002/1.2.840.113619.2.428.3.695552.238.1703812878.766"
+dcm_path = "F:/0_project/prca/dicom/20240225/2024.02.25-144314-STD-1.3.12.2.1107.5.99.3/20240225/1.3.12.2.1107.5.1.7.120479.30000024022512255527200003523"
 
 def sitk_read_dcm_series(file_path:str)->sitk.Image:
     reader = sitk.ImageSeriesReader()
@@ -22,7 +22,10 @@ def sitk_read_dcm_series(file_path:str)->sitk.Image:
 colors = vtk.vtkNamedColors()
 
 class CustomInteractorStyle(vtk.vtkInteractorStyleImage):
-    def __init__(self, img_viewer:vtk.vtkImageViewer2,iren:vtk.vtkRenderWindowInteractor,sitk_img:sitk.Image):
+    def __init__(self, img_viewer:vtk.vtkImageViewer2,
+                 iren:vtk.vtkRenderWindowInteractor,
+                 sitk_img:sitk.Image,
+                 vtk_img:vtk.vtkImageData):
         self.AddObserver(vtk.vtkCommand.MouseWheelForwardEvent, self.on_scroll_forward)
         self.AddObserver(vtk.vtkCommand.MouseWheelBackwardEvent, self.on_scroll_backward)
         self.AddObserver(vtk.vtkCommand.LeftButtonPressEvent, self.on_left_button_press)
@@ -56,6 +59,7 @@ class CustomInteractorStyle(vtk.vtkInteractorStyleImage):
         self.create_right_down_corner_annotation()
         self.create_slice_slider(iren)
         # self.create_cross_line()
+        self.create_cross_line2(iren,vtk_img)
 
     def on_mouse_move(self, obj, event):
         if self.is_left_button_pressed:
@@ -241,6 +245,22 @@ class CustomInteractorStyle(vtk.vtkInteractorStyleImage):
             self.cross_points.InsertPoint(3, self.view_pos[0] + self.cross_len, self.view_pos[1], self.view_pos[2]+self.img_size[2])
             self.cross_points.Modified()
 
+    def create_cross_line2(self,iren,vtk_img):
+        reslice_cursor = vtk.vtkResliceCursor()
+        reslice_cursor.SetCenter(256,256,1)
+        reslice_cursor.SetThickMode(1)
+        reslice_cursor.SetThickness(10,10,10)
+        reslice_cursor.SetHole(0)
+        reslice_cursor.SetImage(vtk_img)
+
+        cursorWidget = vtk.vtkResliceCursorWidget()
+        cursorWidget.SetInteractor(iren)
+        rep = vtk.vtkResliceCursorThickLineRepresentation()
+        rep.SetWindowLevel(500,0,0)
+        rep.GetResliceCursorActor().GetCursorAlgorithm().SetResliceCursor(reslice_cursor)
+        cursorWidget.SetRepresentation(rep)
+        cursorWidget.EnabledOn()
+
 
 class DICOMViewer():
     def __init__(self,dcm_path:str):
@@ -255,18 +275,20 @@ class DICOMViewer():
         reslice.SetResliceAxesDirectionCosines(1,0,0,0,1,0,0,0,-1)
         # vtk_img_data.SetSpacing(2,2,1)
         flip = vtk.vtkImageFlip()
-        flip.SetFilteredAxes(0)
+        # flip.SetFilteredAxes(0)
         flip.SetFilteredAxes(2)
-        flip.SetFilteredAxes(1)
+        # flip.SetFilteredAxes(1)
         flip.SetInputData(vtk_img_data)
         flip.Update()
+        self.vtk_img_data = flip.GetOutput()
+        # self.view_axial = vtk.vtkResliceImageViewer()
         self.view_axial = vtk.vtkImageViewer2()
         self.view_coronal = vtk.vtkImageViewer2()
         self.view_sagittal = vtk.vtkImageViewer2()
         self.view_axial.SetSliceOrientationToXY()
         self.view_coronal.SetSliceOrientationToXZ()
         self.view_sagittal.SetSliceOrientationToYZ()
-        self.view_axial.SetInputConnection(reslice.GetOutputPort())
+        self.view_axial.SetInputData(flip.GetOutput())
         self.view_coronal.SetInputConnection(reslice.GetOutputPort())
         self.view_sagittal.SetInputConnection(reslice.GetOutputPort())
 
@@ -280,7 +302,7 @@ class DICOMViewer():
         self.view_axial.SetPosition(0,0)
         iren = vtk.vtkRenderWindowInteractor()
         self.view_axial.SetupInteractor(iren)
-        style_axial = CustomInteractorStyle(self.view_axial,iren,self.sitk_img)
+        style_axial = CustomInteractorStyle(self.view_axial,iren,self.sitk_img,self.vtk_img_data)
         # style_axial = vtk.vtkInteractorStyleImage()
         # style_axial.SetDefaultRenderer(self.view_axial.GetRenderer())
         iren.SetInteractorStyle(style_axial)
@@ -296,7 +318,7 @@ class DICOMViewer():
         self.view_sagittal.SetPosition(512,0)
         iren = vtk.vtkRenderWindowInteractor()
         self.view_sagittal.SetupInteractor(iren)
-        style_sagittal = CustomInteractorStyle(self.view_sagittal,iren,self.sitk_img)
+        style_sagittal = CustomInteractorStyle(self.view_sagittal,iren,self.sitk_img,self.vtk_img_data)
         iren.SetInteractorStyle(style_sagittal)
         iren.AddObserver(vtk.vtkCommand.ExitEvent,self.close_window)
         self.view_sagittal.Render()
@@ -310,7 +332,7 @@ class DICOMViewer():
         self.view_coronal.SetPosition(0,512)
         iren = vtk.vtkRenderWindowInteractor()
         self.view_coronal.SetupInteractor(iren)
-        style_coronal = CustomInteractorStyle(self.view_coronal,iren,self.sitk_img)
+        style_coronal = CustomInteractorStyle(self.view_coronal,iren,self.sitk_img,self.vtk_img_data)
         iren.SetInteractorStyle(style_coronal)
         iren.AddObserver(vtk.vtkCommand.ExitEvent,self.close_window)
         self.view_coronal.Render()
@@ -331,4 +353,3 @@ async def main():
 
 if __name__=='__main__':
     asyncio.run(main())
-
