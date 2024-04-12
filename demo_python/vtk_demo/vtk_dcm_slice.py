@@ -9,7 +9,7 @@ import tkinter as tk
 from vtkmodules.tk.vtkTkRenderWindowInteractor import vtkTkRenderWindowInteractor
 import SimpleITK as sitk
 
-dcm_path = "D:/Leo/0project/prca/dicom/20231229/002/1.2.840.113619.2.428.3.695552.238.1703812878.766"
+dcm_path = "F:/0_project/prca/dicom/20240225/2024.02.25-144314-STD-1.3.12.2.1107.5.99.3/20240225/1.3.12.2.1107.5.1.7.120479.30000024022512255527200003523"
 
 # helper class to format slice status message
 class SliceMessage:
@@ -244,7 +244,7 @@ def read_dicom_slice():
     # print(dcm_reader.GetPixelSpacing())
     # print(dcm_reader.GetImagePositionPatient())
     img_data = dcm_reader.GetOutput()#vtk.vtkImageData
-    img_data.SetSpacing(2,2,1)
+    # img_data.SetSpacing(2,2,1)
     flip = vtk.vtkImageFlip()
     flip.SetFilteredAxes(2)
     flip.SetInputData(img_data)
@@ -300,6 +300,7 @@ def read_dicom_slice():
     iren.SetInteractorStyle(mt_interactor)
     # iren.SetInteractorStyle(vtk.vtkInteractorStyleImage())
 
+    # img_viewer.SetupInteractor(iren)
     img_viewer.Render()
     # vtk.vtkRenderer().ResetCameraScreenSpace()
 
@@ -324,36 +325,44 @@ def dicom_view():
     print(f'dimensions:{dimensions}')
 
     flip = vtk.vtkImageFlip()
-    flip.SetFilteredAxes(2)
     flip.SetInputData(dcm_reader.GetOutput())
+    flip.SetFilteredAxes(2)
     flip.Update()
 
-    ren_win = vtk.vtkRenderWindow()
-    # ren_win.SetSize(int(dimensions[0]*spacing[0]),int(dimensions[1]*spacing[1]))
-    ren_win.SetSize(512,512)
-    # print(f'ren_win size:{ren_win.GetSize()}')
-    # print(f'screen size:{ren_win.GetScreenSize()}')
-    # ren_win.SetFullScreen(1)
-    # ren_win.SetTileScale(2,2)
-    iren = vtk.vtkRenderWindowInteractor()
+    # viewer = vtk.vtkResliceImageViewer()
+    viewer = vtk.vtkImageViewer2()
+    viewer.SetInputData(flip.GetOutput())
+    viewer.SetSliceOrientationToXY()
+    # viewer.SetColorLevel(0)
+    # viewer.SetColorWindow(500)
 
-    img_viewer = vtk.vtkImageViewer2()
-    img_viewer.SetInputConnection(flip.GetOutputPort())
-    # img_viewer.SetSize(512,512)
-    img_viewer.GetRenderer().SetBackground(colors.GetColor3d('gray'))
-    img_viewer.SetRenderWindow(ren_win)
+    # 添加交互功能
+    interactor = vtk.vtkRenderWindowInteractor()
+    viewer.SetupInteractor(interactor)
 
-    style = vtk.vtkInteractorStyleImage()
-    style.SetDefaultRenderer(img_viewer.GetRenderer())
-    iren.SetRenderWindow(ren_win)
-    iren.SetInteractorStyle(style)
-    # print(dcm_reader.GetDataSpacing())
-    # print(vtk_img_data.GetSpacing())
+    reslice_cursor = vtk.vtkResliceCursor()
+    reslice_cursor.SetCenter(256,256,1)
+    reslice_cursor.SetThickMode(0)
+    reslice_cursor.SetThickness(10,10,10)
+    reslice_cursor.SetImage(dcm_reader.GetOutput())
+    cursorWidget = vtk.vtkResliceCursorWidget()
+    cursorWidget.SetInteractor(interactor)
+    rep = vtk.vtkResliceCursorLineRepresentation()
+    rep.GetResliceCursorActor().GetCursorAlgorithm().SetResliceCursor(reslice_cursor)
+    rep.GetResliceCursorActor().GetCursorAlgorithm().SetReslicePlaneNormalToZAxis()
+    reslice = rep.GetReslice()
+    reslice.SetInputData(flip.GetOutput())
+    reslice.Update()
+    cursorWidget.SetDefaultRenderer(viewer.GetRenderer())
+    cursorWidget.SetRepresentation(rep)
+    cursorWidget.On()
 
-    img_viewer.SetupInteractor(iren)
-    img_viewer.GetRenderer().ResetCameraScreenSpace()
-    img_viewer.Render()
-    iren.Start()
+    # 设置窗口并渲染
+    # viewer.GetRenderer().ResetCamera()
+    viewer.Render()
+
+    # 开启交互
+    interactor.Start()
 
 
 
@@ -388,7 +397,7 @@ def vtk_in_tkinter():
     root_window.mainloop()
 
 if __name__=='__main__':
-    read_dicom_slice()
-    # dicom_view()
+    # read_dicom_slice()
+    dicom_view()
 
 
