@@ -65,24 +65,34 @@ class laser_rangefinder(object):
         res = self.stx+cmd+data1+data2+self.etx+bcc
         self.ser.write(res)
 
-    def read_sensor_value(self):
+    def read_sensor_data(self):
         self.write_data(self.read_vaule_address,b'\xb0',b'\x01')
         count = 0
         while not self.ser.in_waiting:
             time.sleep(0.001)
             count = count+1
         rec_data = self.ser.readline()
-        res = int.from_bytes(rec_data[2:4],'big')
-        if res>32768:
-            res = res-65536
-        disp = 10
-        res = res*disp/1000.0
+        return rec_data
+
+    def read_sensor_value(self):
+        value_validation = False
+        while not value_validation:
+            rec_data = self.read_sensor_data()
+            res = int.from_bytes(rec_data[2:4],'big')
+            if res>32768:
+                res = res-65536
+            disp = 10
+            res = res*disp/1000.0
+            res += 100
+            if res>50 and res<150:
+                value_validation = True
         
-        return res+100
+        return res
 
     def run(self):
         while True:
             res = self.read_sensor_value()
+            # print(int.from_bytes(res[2:4],'big'))
             print(res)
             time.sleep(1)
 
