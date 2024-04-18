@@ -32,6 +32,7 @@ class MyThread(threading.Thread):
 
 if __name__ == '__main__':
     # signal.signal(signal.SIGINT, signal_handler)
+    t = time.strftime('%H%M%S',time.localtime())
     t1 = threading.Thread(target=forever_loop)
     t1.daemon = True
     t1.start()

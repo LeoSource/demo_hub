@@ -1,5 +1,4 @@
 import time
-
 import libscrc
 import serial
 
@@ -32,69 +31,73 @@ class SerialModbus(object):
         self.vel_fdb_addr = b'\x42\xd1'
         self.vel_cmd_addr = b'\x43\xd0'
         self.analog_input_addr = b'\x46\x53'
+        self.num_register32 = b'\x00\x02'
+        self.num_register16 = b'\x00\x01'
+        self.len_read32 = 9
+        self.len_read16 = 7
 
-    def get_read_modbus(self,addr_register:bytes,num_register:bytes):
+    def get_read_modbus(self,addr_register:bytes,num_register:bytes)->bytes:
         modbus_data = self.servo_port+self.read_addr+addr_register+num_register
         modbus_data += libscrc.modbus(modbus_data).to_bytes(2,'little')
         return modbus_data
 
-    def get_write_modbus(self,addr_register:bytes,num_register:bytes,num_bytes:bytes,byte_data:bytes):
+    def get_write_modbus(self,addr_register:bytes,num_register:bytes,num_bytes:bytes,byte_data:bytes)->bytes:
         modbus_data = self.servo_port+self.write_addr+addr_register+num_register+num_bytes+byte_data
         modbus_data += libscrc.modbus(modbus_data).to_bytes(2,'little')
         return modbus_data
 
     def read_servo_status(self):
-        modbus_data = self.get_read_modbus(self.status_fdb_addr,b'\x00\x01')
+        modbus_data = self.get_read_modbus(self.status_fdb_addr,self.num_register16)
         self.ser.write(modbus_data)
-        while not self.ser.in_waiting:
-            time.sleep(0.001)
-        rec_data = self.ser.readline()
+        while self.ser.in_waiting!=self.len_read16:
+            continue
+        rec_data = self.ser.read(self.len_read16)
         return rec_data[3:5]
 
     def read_servo_pos(self):
-        modbus_data = self.get_read_modbus(self.pos_fdb_addr,b'\x00\x02')
+        modbus_data = self.get_read_modbus(self.pos_fdb_addr,self.num_register32)
         self.ser.write(modbus_data)
-        while not self.ser.in_waiting:
-            time.sleep(0.001)
-        rec_data = self.ser.readline()
+        while self.ser.in_waiting!=self.len_read32:
+            continue
+        rec_data = self.ser.read(self.len_read32)
         pos_high = rec_data[5:7]
         pos_low = rec_data[3:5]
         return pos_high+pos_low
 
     def read_servo_vel(self):
-        modbus_data = self.get_read_modbus(self.vel_fdb_addr,b'\x00\x02')
+        modbus_data = self.get_read_modbus(self.vel_fdb_addr,self.num_register32)
         self.ser.write(modbus_data)
-        while not self.ser.in_waiting:
-            time.sleep(0.001)
-        rec_data = self.ser.readline()
+        while self.ser.in_waiting!=self.len_read32:
+            continue
+        rec_data = self.ser.read(self.len_read32)
         return rec_data[5:7]+rec_data[3:5]
     
     def read_servo_err(self):
-        modbus_data = self.get_read_modbus(self.err_fdb_addr,b'\x00\x02')
+        modbus_data = self.get_read_modbus(self.err_fdb_addr,self.num_register32)
         self.ser.write(modbus_data)
-        while not self.ser.in_waiting:
-            time.sleep(0.001)
-        rec_data = self.ser.readline()
+        while self.ser.in_waiting!=self.len_read32:
+            continue
+        rec_data = self.ser.read(self.len_read32)
         return rec_data[5:7]+rec_data[3:5]
 
     def read_servo_flag(self):
-        modbus_data = self.get_read_modbus(b'\x46\x5d',b'\x00\x02')
+        modbus_data = self.get_read_modbus(b'\x46\x5d',self.num_register32)
         self.ser.write(modbus_data)
-        while not self.ser.in_waiting:
-            time.sleep(0.001)
-        rec_data = self.ser.readline()
+        while self.ser.in_waiting!=self.len_read32:
+            continue
+        rec_data = self.ser.read(self.len_read32)
         return rec_data[5:7]+rec_data[3:5]
     
     def read_analog_input(self):
-        modbus_data = self.get_read_modbus(self.analog_input_addr,b'\x00\x01')
+        modbus_data = self.get_read_modbus(self.analog_input_addr,self.num_register16)
         self.ser.write(modbus_data)
-        while not self.ser.in_waiting:
-            time.sleep(0.001)
-        rec_data = self.ser.readline()
+        while self.ser.in_waiting!=self.len_read16:
+            continue
+        rec_data = self.ser.read(self.len_read16)
         return rec_data[3:5]
 
     def write_servo_status(self,cmd:bytes):
-        modbus_data = self.get_write_modbus(self.status_cmd_addr,b'\x00\x01',b'\x02',cmd)
+        modbus_data = self.get_write_modbus(self.status_cmd_addr,self.num_register16,b'\x02',cmd)
         self.ser.write(modbus_data)
         while not self.ser.in_waiting:
             time.sleep(0.001)
@@ -105,7 +108,7 @@ class SerialModbus(object):
             return False
 
     def write_servo_pos(self,cmd):
-        modbus_data = self.get_write_modbus(self.pos_cmd_addr,b'\x00\x02',b'\x04',cmd)
+        modbus_data = self.get_write_modbus(self.pos_cmd_addr,self.num_register32,b'\x04',cmd)
         self.ser.write(modbus_data)
         while self.ser.in_waiting!=8:
             time.sleep(0.001)
@@ -116,7 +119,7 @@ class SerialModbus(object):
             return False
 
     def write_servo_vel(self,cmd):
-        modbus_data = self.get_write_modbus(self.vel_cmd_addr,b'\x00\x02',b'\x04',cmd)
+        modbus_data = self.get_write_modbus(self.vel_cmd_addr,self.num_register32,b'\x04',cmd)
         self.ser.write(modbus_data)
         while self.ser.in_waiting!=8:
             time.sleep(0.001)
@@ -203,13 +206,14 @@ class SerialModbus(object):
         while True:
             analog_input = self.read_analog_input()
             ai_value = int.from_bytes(analog_input,'big')
-            # print(ai_value/1843*10-11.2)
-            print(analog_input)
-            time.sleep(2)
+            t = time.strftime('%H%M%S',time.localtime())
+            print(t,ai_value/1843*10-11.2)
+            # print(analog_input)
+            # time.sleep(2)
 
 
 
 if __name__ == '__main__':
-    modbus = SerialModbus(port='COM8',bps=9600,timex=0.1)
+    modbus = SerialModbus(port='COM11',bps=9600,timex=0.1)
     # modbus.run()
     modbus.print()

@@ -33,7 +33,7 @@ class laser_rangefinder(object):
     def __init__(self,bps=9600) -> None:
         try:
             lasar_port = find_lasar(bps)
-            self.ser = serial.Serial(lasar_port,bps,timeout=0.1)
+            self.ser = serial.Serial(lasar_port,bps,timeout=0.05)
             print('波特率：',self.ser.baudrate)
             print('校验位：',self.ser.parity)
             print('停止位：',self.ser.stopbits)
@@ -52,6 +52,7 @@ class laser_rangefinder(object):
         self.read_vaule_address = b'\x43'
         self.write_setting_address = b'\x57'
         self.read_setting_address = b'\x52'
+        self.len_bytes = 6
 
     def get_bcc(self,dat1:bytes,dat2:bytes,dat3:bytes)->bytes:
         res = int.from_bytes(dat1,'big') ^ int.from_bytes(dat2,'big') ^ int.from_bytes(dat3,'big')
@@ -63,29 +64,33 @@ class laser_rangefinder(object):
     def write_data(self,cmd:bytes,data1:bytes,data2:bytes):
         bcc = self.get_bcc(cmd,data1,data2)
         res = self.stx+cmd+data1+data2+self.etx+bcc
-        self.ser.write(res)
+        self.ser.write(res)#02 43 B0 01 03 F2
 
     def read_sensor_data(self):
         self.write_data(self.read_vaule_address,b'\xb0',b'\x01')
-        count = 0
-        while not self.ser.in_waiting:
-            time.sleep(0.001)
-            count = count+1
-        rec_data = self.ser.readline()
+        while self.ser.in_waiting!=self.len_bytes:
+            continue
+        rec_data = self.ser.read(self.len_bytes)
+        # self.ser.reset_input_buffer()
+        # while not self.ser.in_waiting:
+        #     # time.sleep_ms(10)
+        #     count = count+1
+        # rec_data = self.ser.readline()
         return rec_data
 
     def read_sensor_value(self):
-        value_validation = False
-        while not value_validation:
-            rec_data = self.read_sensor_data()
-            res = int.from_bytes(rec_data[2:4],'big')
-            if res>32768:
-                res = res-65536
-            disp = 10
-            res = res*disp/1000.0
-            res += 100
-            if res>50 and res<150:
-                value_validation = True
+        # value_validation = False
+        # while not value_validation:
+        rec_data = self.read_sensor_data()
+        res = int.from_bytes(rec_data[2:4],'big')
+        if res>32768:
+            res = res-65536
+        disp = 10
+        res = res*disp/1000.0
+        res += 100
+        if res>50 and res<150:
+            value_validation = True
+        value_validation = True
         
         return res
 
@@ -93,8 +98,9 @@ class laser_rangefinder(object):
         while True:
             res = self.read_sensor_value()
             # print(int.from_bytes(res[2:4],'big'))
-            print(res)
-            time.sleep(1)
+            t = time.strftime('%H%M%S',time.localtime())
+            print(t,res)
+            time.sleep(0.005)
 
 
 if __name__=='__main__':
