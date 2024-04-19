@@ -214,6 +214,6 @@ class SerialModbus(object):
 
 
 if __name__ == '__main__':
-    modbus = SerialModbus(port='COM11',bps=9600,timex=0.1)
+    modbus = SerialModbus(port='COM4',bps=9600,timex=0.1)
     # modbus.run()
     modbus.print()
