@@ -21,7 +21,7 @@ class DataGraph(object):
     def read_forever(self):
         while True:
             self.read_value()
-            time.sleep(0.005)
+            time.sleep(0.05)
 
     def on_timer(self,ax):
         self.data_list = self.data_list[1:]+[self.value]
@@ -32,6 +32,7 @@ class DataGraph(object):
         #             self.time[idx] = self.time[idx]-(self.time[-1]-self.time_max)
         self.line_data.set_xdata(self.time)
         self.line_data.set_ydata(self.data_list)
+        ax.set_xlim([min(self.time),max(self.time)])
         ax.draw_artist(self.line_data)
         ax.figure.canvas.draw()
         # ax.plot(self.time,self.data_list)
@@ -52,7 +53,7 @@ class DataGraph(object):
         # self.ax.set_yticks(range(0, 101, 10))
         ax.grid(True)
         self.data_list = [None]*NUM_POINTS
-        self.time = [None]*NUM_POINTS
+        self.time = [0]*NUM_POINTS
         self.line_data, = ax.plot(self.time,self.data_list)
         timer = fig.canvas.new_timer(interval=50)
         timer.add_callback(self.on_timer,ax)
