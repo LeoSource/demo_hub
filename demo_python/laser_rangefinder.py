@@ -33,7 +33,7 @@ class laser_rangefinder(object):
     def __init__(self,bps=9600) -> None:
         try:
             lasar_port = find_lasar(bps)
-            self.ser = serial.Serial('COM13',bps,timeout=0.05)
+            self.ser = serial.Serial('COM4',bps,timeout=0.05)
             print('波特率：',self.ser.baudrate)
             print('校验位：',self.ser.parity)
             print('停止位：',self.ser.stopbits)

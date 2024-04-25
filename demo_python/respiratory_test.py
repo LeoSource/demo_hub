@@ -80,8 +80,8 @@ class RespiratoryTest(object):
     def respiratory_control(self):
         pub_data = {"name":"respiratory","motion":False}
         # range = [30970,31160]
-        # range = [0,30970]
-        range = [31160,50000]
+        range = [0,30850]
+        # range = [31160,50000]
         while self.rp_force is None:
             time.sleep(0.2)
         self.rp_force_last = self.rp_force
@@ -121,17 +121,17 @@ class RespiratoryTest(object):
                 self.needle_force.append([time.time(),ai_value])
 
     def run(self):
-        thread_distance = Thread(target=self.read_distance_data)
-        thread_distance.daemon = True
-        thread_distance.start()
+        # thread_distance = Thread(target=self.read_distance_data)
+        # thread_distance.daemon = True
+        # thread_distance.start()
 
         thread_respiratory_force = Thread(target=self.read_respiratory_force)
         thread_respiratory_force.daemon = True
         thread_respiratory_force.start()
 
-        thread_needle_force = Thread(target=self.read_needle_force)
-        thread_needle_force.daemon = True
-        thread_needle_force.start()
+        # thread_needle_force = Thread(target=self.read_needle_force)
+        # thread_needle_force.daemon = True
+        # thread_needle_force.start()
 
         thread_respiratory_control = Thread(target=self.respiratory_control)
         thread_respiratory_control.daemon = True
@@ -143,7 +143,7 @@ class RespiratoryTest(object):
 
 if __name__=='__main__':
     laser = laser_rangefinder.laser_rangefinder(9600)
-    servo = serial_communication.SerialModbus(port='COM4',bps=9600,timex=0.1)
+    servo = serial_communication.SerialModbus(port='COM14',bps=9600,timex=0.1)
     rp_sensor = respiratory_force_sensor.respiratory_sensor(com='COM12',bps=9600)
     mqtt_client = RobotMQTTClient('192.168.2.242')
     rp_test = RespiratoryTest(laser,servo,rp_sensor,mqtt_client)
