@@ -29,19 +29,12 @@ def find_lasar(bps,max_failed=10):
         raise Exception("未找到激光位移传感器")
     return lasar_port.name
 
-class laser_rangefinder(object):
-    def __init__(self,bps=9600) -> None:
+class LaserRangefinder(object):
+    def __init__(self,com:str,bps=9600) -> None:
         try:
             lasar_port = find_lasar(bps)
-            self.ser = serial.Serial('COM4',bps,timeout=0.05)
-            print('波特率：',self.ser.baudrate)
-            print('校验位：',self.ser.parity)
-            print('停止位：',self.ser.stopbits)
-            print('读超时设置：',self.ser.timeout)
-            print('软件流控：',self.ser.xonxoff)
-            print('硬件流控：',self.ser.rtscts)
-            print('硬件流控：',self.ser.dsrdtr)
-            print('字符间隔超时：',self.ser.interCharTimeout)
+            self.ser = serial.Serial(com,bps,timeout=0.05)
+            print(f'{com} is opened')
         except Exception as e:
             print("---error---: ",e)
             raise Exception(e)
@@ -71,11 +64,6 @@ class laser_rangefinder(object):
         while self.ser.in_waiting!=self.len_bytes:
             continue
         rec_data = self.ser.read(self.len_bytes)
-        # self.ser.reset_input_buffer()
-        # while not self.ser.in_waiting:
-        #     # time.sleep_ms(10)
-        #     count = count+1
-        # rec_data = self.ser.readline()
         return rec_data
 
     def read_sensor_value(self):
@@ -104,5 +92,5 @@ class laser_rangefinder(object):
 
 
 if __name__=='__main__':
-    lr = laser_rangefinder(bps=9600)
+    lr = LaserRangefinder(com='COM4',bps=9600)
     lr.run()

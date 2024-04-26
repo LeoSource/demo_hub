@@ -4,9 +4,9 @@
 # @Date   		: 2024/04/12 16:14:44
 # @Author	    : zxliao, zhixiangleo@163.com
 
-import laser_rangefinder
+from laser_rangefinder import LaserRangefinder
 import serial_communication
-import respiratory_force_sensor
+from respiratory_force_sensor import RespiratorySensor
 from robot_mqtt_client import RobotMQTTClient
 import time
 import sys
@@ -142,9 +142,9 @@ class RespiratoryTest(object):
 
 
 if __name__=='__main__':
-    laser = laser_rangefinder.laser_rangefinder(9600)
-    servo = serial_communication.SerialModbus(port='COM14',bps=9600,timex=0.1)
-    rp_sensor = respiratory_force_sensor.respiratory_sensor(com='COM12',bps=9600)
+    laser = LaserRangefinder(com='COM4',bps=9600)
+    servo = serial_communication.SerialModbus(port='COM13',bps=9600,timex=0.1)
+    rp_sensor = RespiratorySensor(com='COM12',bps=9600)
     mqtt_client = RobotMQTTClient('192.168.2.242')
     rp_test = RespiratoryTest(laser,servo,rp_sensor,mqtt_client)
     rp_test.run()
