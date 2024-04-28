@@ -22,7 +22,7 @@ class RespiratorySensor(object):
     def __init__(self,com:str,bps=9600) -> None:
         try:
             self.ser = serial.Serial(com,bps,timeout=0.1)
-            print(f'{com} is opened')
+            print(f'respiratory force sensor {com} is opened')
         except Exception as e:
             print("---error---:",e)
             raise Exception(e)
