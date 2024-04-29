@@ -9,7 +9,7 @@ import time
 import threading
 import matplotlib.pyplot as plt
 
-NUM_POINTS = 100
+NUM_POINTS = 300
 TIME_MAX = 10
 
 colors = ('b','g','r','c','m','y','k')
