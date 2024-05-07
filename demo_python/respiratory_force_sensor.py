@@ -9,6 +9,7 @@ import time
 import matplotlib.pyplot as plt
 from threading import Thread
 from robot_mqtt_client import RobotMQTTClient
+from dynamic_graph import DynamicGraph
 import json
 
 POINTS = 200
@@ -88,23 +89,10 @@ class RespiratorySensor(object):
         ax.figure.canvas.draw()
 
     def plot(self):
-        thread_read = Thread(target=self.run)
-        thread_read.daemon = True
-        thread_read.start()
+        graph = DynamicGraph()
+        graph.add_plt_data(20,self.read_sensor_value,'band')
+        graph.plot()
 
-        self.plt_data = [None]*POINTS
-        self.time = [None]*POINTS
-        fig,ax = plt.subplots()
-        ax.set_xlim([0,self.time_max])
-        ax.set_ylim([30970,31160])
-        ax.set_autoscale_on(False)
-        ax.grid(True)
-        self.line_data, = ax.plot(self.time,self.plt_data,label='force')
-        # self.bg = self.fig.canvas.copy_from_bbox(self.ax.bbox)
-        timer = fig.canvas.new_timer(interval=50)
-        timer.add_callback(self.on_timer,ax)
-        timer.start()
-        plt.show()
 
     def respiratory_control(self):
         self.mqtt_client = RobotMQTTClient('192.168.2.242')
@@ -117,8 +105,8 @@ class RespiratorySensor(object):
 
         pub_data = {"name":"respiratory","motion":False}
         # range = [30970,31160]
-        range = [0,30850]
-        # range = [31160,50000]
+        range = [0,30688]
+        # range = [31080,50000]
         while self.sensor_value is None:
             time.sleep(0.02)
         self.sensor_value_last = self.sensor_value
@@ -138,7 +126,7 @@ class RespiratorySensor(object):
 if __name__=='__main__':
     rp_sensor = RespiratorySensor(com='COM12',bps=9600)
     # rp_sensor.run()
-    # rp_sensor.plot()
-    rp_sensor.respiratory_control()
+    rp_sensor.plot()
+    # rp_sensor.respiratory_control()
 
 

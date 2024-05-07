@@ -8,6 +8,7 @@ import math
 import time
 import threading
 import matplotlib.pyplot as plt
+import keyboard
 
 NUM_POINTS = 300
 TIME_MAX = 10
@@ -42,6 +43,8 @@ class DynamicGraph(object):
         self.read_func = None
         self.label = None
         self.interval = None
+        self.pause_plot = False
+        keyboard.on_press_key('space',self.pause_draw)
 
     def add_plt_data(self,interval:int,func,name:str):
         if self.time is None:
@@ -104,6 +107,8 @@ class DynamicGraph(object):
         for idx in range(len(self.label)):
             self.line[idx].set_xdata(self.time[idx])
             self.line[idx].set_ydata(self.value[idx])
+            if self.pause_plot:
+                continue
             if None in self.time[idx]:
                 xdata = [t for t in self.time[idx] if t is not None]
                 if len(xdata)==1:
@@ -121,7 +126,11 @@ class DynamicGraph(object):
             else:
                 ax[idx].set_ylim(min(self.value[idx]),max(self.value[idx]))
             ax[idx].draw_artist(self.line[idx])
-        ax[0].figure.canvas.draw()
+        if not self.pause_plot:
+            ax[0].figure.canvas.draw()
+
+    def pause_draw(self,x):
+        self.pause_plot = not self.pause_plot
 
 
 def demo():
