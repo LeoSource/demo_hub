@@ -5,6 +5,7 @@ import serial
 import matplotlib.pyplot as plt
 from threading import Thread
 from robot_mqtt_client import RobotMQTTClient
+from dynamic_graph import DynamicGraph
 import json
 
 
@@ -116,57 +117,22 @@ class LaserRangefinder(object):
             time.sleep(0.01)
 
     def plot(self):
-        thread_read = Thread(target=self.record_plt_data)
-        thread_read.daemon = True
-        thread_read.start()
-
-        fig,ax = plt.subplots()
-        ax.set_xlim([0,self.time_max])
-        ax.set_ylim([-1,1])
-        ax.set_autoscale_on(False)
-        ax.grid(True)
-        self.line_data, = ax.plot(self.time,self.plt_data,label='force')
-        # self.bg = self.fig.canvas.copy_from_bbox(self.ax.bbox)
-        timer = fig.canvas.new_timer(interval=50)
-        timer.add_callback(self.on_timer,ax)
-        timer.start()
-        plt.show()
-
-    def on_timer(self,ax):
-        self.line_data.set_xdata(self.time)
-        self.line_data.set_ydata(self.plt_data)
-        if None in self.time:
-            xdata = [t for t in self.time if t is not None]
-            if len(xdata)==1:
-                pass
-            else:
-                ax.set_xlim([min(xdata),max(xdata)])
-        else:
-            ax.set_xlim([min(self.time),max(self.time)])
-        if None in self.plt_data:
-            ydata = [y for y in self.plt_data if y is not None]
-            if len(ydata)==1:
-                pass
-            else:
-                ax.set_ylim([min(ydata),max(ydata)])
-        else:
-            ax.set_ylim([min(self.plt_data),max(self.plt_data)])
-        ax.draw_artist(self.line_data)
-        ax.figure.canvas.draw()        
+        graph = DynamicGraph()
+        graph.add_plt_data(5,self.read_sensor_value,'laser')
+        graph.plot()
 
     def respiratory_control(self):
         self.mqtt_client = RobotMQTTClient('192.168.2.242')
         self.mqtt_client.add_callabck_robot_info(self.on_topic_robot_info)
         self.mqtt_client.client.loop_start()
 
-        thread_read = Thread(target=self.run)
-        thread_read.daemon = True
+        thread_read = Thread(target=self.run,daemon=True)
         thread_read.start()
 
         pub_data = {"name":"respiratory","motion":False}
         # range = [30970,31160]
-        # range = [0,84]
-        range = [90,100]
+        range = [0,77.6715]
+        # range = [94.2585,100]
         while self.sensor_value is None:
             time.sleep(0.01)
         self.sensor_value_last = self.sensor_value
@@ -187,5 +153,5 @@ class LaserRangefinder(object):
 if __name__=='__main__':
     lr = LaserRangefinder(com='COM4',bps=9600)
     # lr.run()
-    # lr.plot()
-    lr.respiratory_control()
+    lr.plot()
+    # lr.respiratory_control()

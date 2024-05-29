@@ -62,7 +62,8 @@ class RespiratorySensor(object):
     def run(self):
         while True:
             self.sensor_value = self.read_sensor_value()
-            time.sleep(0.01)
+            # print(self.sensor_value)
+            # time.sleep(0.01)
 
     def on_timer(self,ax):
         self.plt_data = self.plt_data[1:]+[self.sensor_value]
@@ -90,7 +91,7 @@ class RespiratorySensor(object):
 
     def plot(self):
         graph = DynamicGraph()
-        graph.add_plt_data(20,self.read_sensor_value,'band')
+        graph.add_plt_data(10,self.read_sensor_value,'band')
         graph.plot()
 
 
@@ -105,8 +106,8 @@ class RespiratorySensor(object):
 
         pub_data = {"name":"respiratory","motion":False}
         # range = [30970,31160]
-        range = [0,30688]
-        # range = [31080,50000]
+        range = [0,33453.6]
+        # range = [33974.4,50000]
         while self.sensor_value is None:
             time.sleep(0.02)
         self.sensor_value_last = self.sensor_value
@@ -124,9 +125,9 @@ class RespiratorySensor(object):
         pass
 
 if __name__=='__main__':
-    rp_sensor = RespiratorySensor(com='COM12',bps=9600)
+    rp_sensor = RespiratorySensor(com='COM3',bps=9600)
     # rp_sensor.run()
-    rp_sensor.plot()
-    # rp_sensor.respiratory_control()
+    # rp_sensor.plot()
+    rp_sensor.respiratory_control()
 
 

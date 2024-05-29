@@ -44,7 +44,7 @@ class DynamicGraph(object):
         self.label = None
         self.interval = None
         self.pause_plot = False
-        keyboard.on_press_key('space',self.pause_draw)
+        keyboard.on_press_key('space',self.__pause_draw)
 
     def add_plt_data(self,interval:int,func,name:str):
         if self.time is None:
@@ -95,15 +95,15 @@ class DynamicGraph(object):
                 axes.append(ax2)
             self.line.append(curve)
 
-        timer = fig.canvas.new_timer(interval=200)
-        timer.add_callback(self.on_timer,axes)
+        timer = fig.canvas.new_timer(interval=80)
+        timer.add_callback(self.__on_timer,axes)
         timer.start()
         fig.legend(self.label,loc='upper left')
         # fig.subplots_adjust(right=1-(len(self.label)-2)*0.15)
         fig.subplots_adjust()
         plt.show()
 
-    def on_timer(self,ax):
+    def __on_timer(self,ax):
         for idx in range(len(self.label)):
             self.line[idx].set_xdata(self.time[idx])
             self.line[idx].set_ydata(self.value[idx])
@@ -129,7 +129,7 @@ class DynamicGraph(object):
         if not self.pause_plot:
             ax[0].figure.canvas.draw()
 
-    def pause_draw(self,x):
+    def __pause_draw(self,x):
         self.pause_plot = not self.pause_plot
 
 
