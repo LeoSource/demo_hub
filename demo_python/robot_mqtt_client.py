@@ -30,7 +30,7 @@ class RobotMQTTClient(object):
     def on_topic_robot_info(self,client,userdata,msg):
         print(f'self receive: {msg.payload.decode()}')
 
-    def add_callabck_robot_info(self,func):
+    def add_callback_robot_info(self,func):
         self.client.message_callback_add(sub='robot_info',callback=func)
 
     def add_callback_robot_error(self,func):
