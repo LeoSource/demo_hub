@@ -4,15 +4,35 @@
 # @Date   		: 2024/06/06 14:06:49
 # @Author	    : zxliao, zhixiangleo@163.com
 
-
+import numpy as np
 from robot_mqtt_client import RobotMQTTClient
+import spatialmath.base as sm
 import json
 import time
 import math
+import random
 
 pi = math.pi
 r2d = 180/math.pi
 d2r = math.pi/180
+
+def parse_direction(dir):
+    zn = dir/np.linalg.norm(dir)
+    alpha = -math.asin(zn[1])
+    beta = math.asin(zn[0]/math.cos(alpha))
+    return sm.roty(beta)@sm.rotx(alpha)
+
+def random_rpy():
+    h = 1
+    cone_angle = 30*d2r
+    max_r = math.tan(cone_angle)*h
+    r = random.uniform(0,max_r)
+    theta = random.uniform(0,2*pi)
+    dir = np.array([r*math.cos(theta),r*math.sin(theta),h])
+    dir = dir/np.linalg.norm(dir)
+    rot_mat = parse_direction(dir)
+    rpy = sm.tr2rpy(rot_mat,"zyx")
+    return rpy[0:2]
 
 class OrientationFit(object):
     def __init__(self) -> None:
@@ -63,7 +83,9 @@ class OrientationFit(object):
             print('robot is not ready!!')
             return
         
-        
+        num = 100
+        # for idx in range(num):
+
 
         
 
@@ -90,6 +112,6 @@ class OrientationFit(object):
 
 
 if __name__=='__main__':
-    of = OrientationFit()
-    of.sample()
-
+    # of = OrientationFit()
+    # of.sample()
+    print(random_rpy())
