@@ -9,6 +9,7 @@ from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
 import numpy as np
 import json
+import time
 
 
 def frame_gen():
@@ -19,8 +20,8 @@ class NeedleGraph(object):
     def __init__(self,mqtt_client) -> None:
         self.pos_needle = None
         self.mqtt_client = mqtt_client
-        # self.mqtt_client.add_callback_robot_info(self.on_topic_robot_info)
-        # self.mqtt_client.client.loop_start()
+        self.mqtt_client.add_callback_robot_info(self.on_topic_robot_info)
+        self.mqtt_client.client.loop_start()
         self.idx = 1
         self.dir = 1.0
 
@@ -30,6 +31,10 @@ class NeedleGraph(object):
         p2 = np.array(j["position_needle"])
         self.pos_needle = np.array([p1,p2])
         self.pos_needle = self.pos_needle.T
+        # self.flex_needle = np.array(j["flexible_neede"])
+        flex_needle_list = j["flexible_needle"]
+        self.flex_needle = np.array(flex_needle_list)
+        self.flex_needle = self.flex_needle.T
 
     def animate(self):
         self.pos_needle = np.array([[0,0,0],[1,2,3]],dtype=np.float64)
@@ -63,11 +68,21 @@ class NeedleGraph(object):
         self.line1.set_3d_properties(self.p1[2,:])
         return [self.line1,self.line2]
 
-
+    def display(self):
+        while not self.mqtt_client.client.is_connected():
+            print('connecting to robot with mqtt...')
+            time.sleep(1)
+        time.sleep(2)
+        while True:
+            # print(self.pos_needle)
+            print(self.flex_needle)
+            print()
+            time.sleep(2)
 
 if __name__=='__main__':
-    # mqtt_client = RobotMQTTClient('192.168.2.242')
-    # needle = NeedleGraph(mqtt_client)
-    needle = NeedleGraph(1)
+    mqtt_client = RobotMQTTClient('192.168.2.242')
+    needle = NeedleGraph(mqtt_client)
+    needle.display()
+    # needle = NeedleGraph(1)
     # needle.plot()
-    needle.animate()
+    # needle.animate()

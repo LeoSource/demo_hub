@@ -23,6 +23,7 @@ class RobotMQTTClient(object):
         self.client.connect(host=ip,port=1883)
         self.client.subscribe(topic='robot_info',qos=0)
         self.client.subscribe(topic='response_robot',qos=1)
+        self.client.subscribe(topic='request_robot',qos=1)
         self.client.subscribe(topic='robot_error',qos=2)
         # self.client.message_callback_add(sub='robot_info',callback=self.on_topic_robot_info)
         # self.client.message_callback_add(sub='robot_info',callback=on_topic_robot_info)
