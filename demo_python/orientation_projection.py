@@ -97,6 +97,13 @@ class OrientationFit(object):
         print(f'maximum Rx error:{alpha_error.max()*r2d}degree, mean Rx error:{alpha_error.mean()*r2d}degree')
         print(f'maximum Ry error:{beta_error.max()*r2d}degree, mean Ry error:{beta_error.mean()*r2d}degree')
         print('save data successfully!')
+
+        fig1 = plt.figure()
+        plt.plot(range(num),alpha_error,label='alpha_error')
+        plt.plot(range(num),beta_error,label='beta_error')
+        plt.grid(True)
+        plt.legend(loc='upper right')
+        plt.show()
         
     def send_traj(self,via_pos,idx:int):
         pub_data = {"name":"motion","slave":{
@@ -143,7 +150,7 @@ def analy_validate_data(filename):
 
 
 if __name__=='__main__':
-    # of = OrientationFit()
+    of = OrientationFit()
     # of.sample()
-    # of.validata()
-    analy_validate_data("rpy_data_2024-0607-173626.txt")
+    of.validata()
+    # analy_validate_data("rpy_data_2024-0607-173626.txt")
