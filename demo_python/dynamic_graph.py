@@ -114,7 +114,8 @@ class DynamicGraph(object):
                 if len(xdata)==1:
                     pass
                 else:
-                    ax[idx].set_xlim([min(xdata),max(xdata)])
+                    pass
+                    # ax[idx].set_xlim([min(xdata),max(xdata)])
             else:
                 ax[idx].set_xlim([min(self.time[idx]),max(self.time[idx])])
             if None in self.value[idx]:
@@ -122,7 +123,8 @@ class DynamicGraph(object):
                 if len(ydata)==1:
                     pass
                 else:
-                    ax[idx].set_ylim([min(ydata),max(ydata)])
+                    pass
+                    # ax[idx].set_ylim([min(ydata),max(ydata)])
             else:
                 ax[idx].set_ylim(min(self.value[idx]),max(self.value[idx]))
             ax[idx].draw_artist(self.line[idx])

@@ -29,8 +29,11 @@ class RespiratorySensor(object):
             raise Exception(e)
         self.len_bytes = 7
         self.data_initial = False
-        self.sensor_value = None
-        self.ttick = None
+        self.sensor_value = 1
+        self.pre_sensor_value = 0
+        self.ttick = 0.01
+        self.pre_ttick = 0.1
+        self.sensor_vel = 0
         self.t0 = time.time()
         self.time_max = 10
 
@@ -56,42 +59,26 @@ class RespiratorySensor(object):
             if data_type==1:
                 value_validation = True
         self.ttick = time.time()-self.t0
+        self.sensor_value = int.from_bytes(data[3:5],'big')
 
+        self.sensor_vel = (self.sensor_value-self.pre_sensor_value)/(self.ttick-self.pre_ttick)
+        self.pre_sensor_value = self.sensor_value
+        self.pre_ttick = self.ttick
         return int.from_bytes(data[3:5],'big')
+    
+    def read_sensor_vel(self)->float:
+        return self.sensor_vel
 
     def run(self):
         while True:
-            self.sensor_value = self.read_sensor_value()
-            # print(self.sensor_value)
-            # time.sleep(0.01)
-
-    def on_timer(self,ax):
-        self.plt_data = self.plt_data[1:]+[self.sensor_value]
-        self.time = self.time[1:]+[self.ttick]
-        self.line_data.set_xdata(self.time)
-        self.line_data.set_ydata(self.plt_data)
-        if None in self.time:
-            xdata = [t for t in self.time if t is not None]
-            if len(xdata)==1:
-                pass
-            else:
-                ax.set_xlim([min(xdata),max(xdata)])
-        else:
-            ax.set_xlim([min(self.time),max(self.time)])
-        if None in self.plt_data:
-            ydata = [y for y in self.plt_data if y is not None]
-            if len(ydata)==1:
-                pass
-            else:
-                ax.set_ylim([min(ydata),max(ydata)])
-        else:
-            ax.set_ylim([min(self.plt_data),max(self.plt_data)])
-        ax.draw_artist(self.line_data)
-        ax.figure.canvas.draw()
+            self.read_sensor_value()
+            # print(self.sensor_vel)
+            time.sleep(0.01)
 
     def plot(self):
         graph = DynamicGraph()
-        graph.add_plt_data(10,self.read_sensor_value,'band')
+        graph.add_plt_data(15,self.read_sensor_value,'band_force')
+        graph.add_plt_data(15,self.read_sensor_vel,'band_vel')
         graph.plot()
 
 
@@ -104,20 +91,32 @@ class RespiratorySensor(object):
         thread_read.daemon = True
         thread_read.start()
 
+        f_max = 33990.0
+        f_min = 33270.0
+        f_range = f_max-f_min
         pub_data = {"name":"respiratory","motion":False}
         # range = [30970,31160]
-        range = [0,33453.6]
-        # range = [33974.4,50000]
+        range_exp = [f_min+0.5*f_range,f_min+0.5*f_range]
+        range_inhale = [f_max-0.5*f_range,f_max-0.5*f_range]
+        expiration = True
         while self.sensor_value is None:
             time.sleep(0.02)
         self.sensor_value_last = self.sensor_value
         while True:
-            if in_range(self.sensor_value,range) and not in_range(self.sensor_value_last,range):
-                pub_data['motion'] = True
-                self.mqtt_client.pub_hr_robot(json.dumps(pub_data))
-            if in_range(self.sensor_value_last,range) and not in_range(self.sensor_value,range):
-                pub_data['motion'] = False
-                self.mqtt_client.pub_hr_robot(json.dumps(pub_data))
+            if expiration:
+                if self.sensor_value<range_exp[0] and self.pre_sensor_value>range_exp[0]:
+                    pub_data['motion'] = True
+                    self.mqtt_client.pub_hr_robot(json.dumps(pub_data))
+                if self.sensor_value>range_exp[1] and self.pre_sensor_value<range_exp[1]:
+                    pub_data['motion'] = False
+                    self.mqtt_client.pub_hr_robot(json.dumps(pub_data))
+            else:
+                if self.sensor_value>range_inhale[0] and self.pre_sensor_value<range_inhale[0]:
+                    pub_data['motion'] = True
+                    self.mqtt_client.pub_hr_robot(json.dumps(pub_data))
+                if self.sensor_value<range_inhale[1] and self.pre_sensor_value>range_inhale[1]:
+                    pub_data['motion'] = False
+                    self.mqtt_client.pub_hr_robot(json.dumps(pub_data))
             self.sensor_value_last = self.sensor_value
             time.sleep(0.005)
 
