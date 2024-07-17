@@ -23,11 +23,21 @@ def parse_direction(dir):
     beta = math.asin(zn[0]/math.cos(alpha))
     return sm.roty(beta)@sm.rotx(alpha)
 
-def random_rpy():
+def random_max_rpy(cone_angle):
     h = 1
-    cone_angle = 30*d2r
+    # cone_angle = 30*d2r
     max_r = math.tan(cone_angle)*h
     r = random.uniform(0,max_r)
+    theta = random.uniform(0,2*pi)
+    dir = np.array([r*math.cos(theta),r*math.sin(theta),h])
+    dir = dir/np.linalg.norm(dir)
+    rot_mat = parse_direction(dir)
+    rpy = sm.tr2rpy(rot_mat,"zyx")
+    return rpy[0:2]
+
+def random_rpy(cone_angle):
+    h = 1
+    r = h*math.tan(cone_angle)
     theta = random.uniform(0,2*pi)
     dir = np.array([r*math.cos(theta),r*math.sin(theta),h])
     dir = dir/np.linalg.norm(dir)
@@ -48,17 +58,11 @@ class OrientationFit(object):
         j = json.loads(msg.payload)
         self.robot_state = j["robot_state"]
         self.rpy = np.array(j["rpy"])
+        self.jps = np.array(j["position_joint"])
 
     def sample(self):
-        time.sleep(2)
-        while not self.mqtt_client.client.is_connected():
-            print('connecting to robot with mqtt...')
-            time.sleep(1)
-        if self.robot_state==10:
-            print('robot is ready to start to test')
-        else:
-            print('robot is not ready!!')
-            return       
+        if not self.is_robot_ready():
+            return
         self.start_record()
         self.send_traj([[0,0],[10*d2r,0],[-10*d2r,0],[0,0]],1)
         self.send_traj([[20*d2r,10*d2r],[-20*d2r,10*d2r],[0,0]],2)
@@ -73,37 +77,59 @@ class OrientationFit(object):
 
 
     def validata(self):
-        time.sleep(2)
-        while not self.mqtt_client.client.is_connected():
-            print('connecting to robot with mqtt...')
-            time.sleep(1)
-        if self.robot_state==10:
-            print('robot is ready to start to test')
-        else:
-            print('robot is not ready!!')
-            return        
+        if not self.is_robot_ready():
+            return
         rpy_list = []
         num = 100
         for idx in range(num):
-            rpy = random_rpy()
+            rpy = random_max_rpy(30*d2r)
             self.send_traj([rpy.tolist()],idx+1)
             rpy_list.append(np.hstack((self.rpy[0:2],rpy)))
         rpy_np = np.array(rpy_list)
-        alpha_error = np.abs(rpy_np[:,0]-rpy_np[:,2])
-        beta_error = np.abs(rpy_np[:,1]-rpy_np[:,3])
         t = time.strftime('%Y-%m%d-%H%M%S',time.localtime())
-        filename = 'rpy_data_'+t+'.txt'
+        filename = './data/rpy_data_'+t+'.txt'
         np.savetxt(filename,rpy_np,delimiter=' ',fmt='%.8f')
-        print(f'maximum Rx error:{alpha_error.max()*r2d}degree, mean Rx error:{alpha_error.mean()*r2d}degree')
-        print(f'maximum Ry error:{beta_error.max()*r2d}degree, mean Ry error:{beta_error.mean()*r2d}degree')
         print('save data successfully!')
+        return rpy_np
 
-        fig1 = plt.figure()
-        plt.plot(range(num),alpha_error,label='alpha_error')
-        plt.plot(range(num),beta_error,label='beta_error')
-        plt.grid(True)
-        plt.legend(loc='upper right')
-        plt.show()
+
+    def sample_rot_err(self):
+        if not self.is_robot_ready():
+            return
+        self.send_traj([[0,0]],0)
+        deg_list = [5,10,20,30]
+        rpy_list = []
+        num = 100
+        for deg in deg_list:
+            for idx in range(num):
+                rpy = random_rpy(deg*d2r)
+                self.send_traj([rpy.tolist()],idx+1)
+                rpy_list.append(np.hstack((self.rpy[0:2],rpy,self.jps[2:4])))
+        rpy_np = np.array(rpy_list)
+        t = time.strftime('%Y-%m%d-%H%M%S',time.localtime())
+        filename = './data/sample_roterr_data_'+t+'.txt'
+        np.savetxt(filename,rpy_np,delimiter=' ',fmt='%.8f')
+        print('save data successfully!')
+        return rpy_np
+
+
+    def sample_rx_err(self):
+        if not self.is_robot_ready():
+            return
+        self.send_traj([[0,0]],0)
+        rpy_list = []
+        num = 100
+        for idx in range(num):
+            alpha = random.uniform(-30*d2r,30*d2r)
+            self.send_traj([[alpha,0]],idx+1)
+            rpy_list.append(np.hstack((self.rpy[0:2],np.array([alpha,0]),self.jps[2:4])))
+        rpy_np = np.array(rpy_list)
+        t = time.strftime('%Y-%m%d-%H%M%S',time.localtime())
+        filename = './data/sample_roterr_data_'+t+'.txt'
+        np.savetxt(filename,rpy_np,delimiter=' ',fmt='%.8f')
+        print('save data successfully!')
+        return rpy_np
+
         
     def send_traj(self,via_pos,idx:int):
         pub_data = {"name":"motion","slave":{
@@ -127,30 +153,75 @@ class OrientationFit(object):
         self.mqtt_client.pub_record_data(json.dumps(pub_data),qos=2)
         time.sleep(1)
 
-def analy_validate_data(filename):
-    td = np.loadtxt(filename)
-    num = td.shape[0]
-    alpha_error = np.abs(td[:,0]-td[:,2])
-    beta_error = np.abs(td[:,1]-td[:,3])
-    # alpha_error[11] = 0
-    # alpha_error[27] = 0
-    # beta_error[27] = 0
-    # alpha_error[26] = 0
-    # beta_error[26] = 0
-    print(f'maximum Rx error:{alpha_error.max()*r2d}degree, mean Rx error:{alpha_error.mean()*r2d}degree')
-    print(f'maximum Ry error:{beta_error.max()*r2d}degree, mean Ry error:{beta_error.mean()*r2d}degree')
+    def is_robot_ready(self):
+        time.sleep(2)
+        while not self.mqtt_client.client.is_connected():
+            print('connecting to robot with mqtt...')
+            time.sleep(1)
+        if self.robot_state==10:
+            print('robot is ready to start to test')
+            return True
+        else:
+            print('robot is not ready!!')
+            return False
 
-    fig1 = plt.figure()
-    plt.plot(range(num),alpha_error,label='alpha_error')
-    plt.plot(range(num),beta_error,label='beta_error')
+def analy_validate_data(vdata,title=None):
+    num = vdata.shape[0]
+    alpha_error = vdata[:,2]-vdata[:,0]
+    beta_error = vdata[:,3]-vdata[:,1]
+    theta = np.zeros(num)
+    for idx in range(num):
+        rot_fdb = sm.rpy2r(np.append(vdata[idx,0:2],0),'zyx')
+        rot_cmd = sm.rpy2r(np.append(vdata[idx,2:4],0),'zyx')
+        theta[idx],v = sm.tr2angvec(rot_cmd@rot_fdb.T)
+    print(f'mean Rx error:{np.abs(alpha_error).mean()*r2d:.2f}degree,'
+          f'maximum Rx error:{np.abs(alpha_error).max()*r2d:.2f}degree,'
+          f'minimum Rx error:{np.abs(alpha_error).min()*r2d:.2f}degree')
+    print(f'mean Ry error:{np.abs(beta_error).mean()*r2d:.2f}degree,'
+          f'maximum Ry error:{np.abs(beta_error).max()*r2d:.2f}degree,'
+          f'minimum Ry error:{np.abs(beta_error).min()*r2d:.2f}degree')
+    print(f'mean theta error:{theta.mean()*r2d:.2f}degree,'
+          f'maximum theta error:{theta.max()*r2d:.2f}degree,'
+          f'mimium theta error:{theta.min()*r2d:.2f}degree')
+    # plt.figure()
+    # plt.subplot(311)
+    # plt.plot(range(num),alpha_error*r2d,label='alpha_error')
+    # plt.plot(range(num),beta_error*r2d,label='beta_error')
+    # plt.plot(range(num),theta*r2d,label='theta')
+    # plt.grid(True)
+    # plt.subplot(312)
+    # plt.plot(range(num),alpha_error*r2d)
+    # plt.plot(range(num),vdata[:,0]*r2d)
+    # plt.subplot(313)
+    # plt.plot(range(num),beta_error*r2d)
+    # plt.plot(range(num),vdata[:,1]*r2d)
+    plt.figure()
+    plt.plot(range(num),alpha_error*r2d,label='alpha_error')
+    plt.plot(range(num),beta_error*r2d,label='beta_error')
+    plt.plot(range(num),theta*r2d,label='theta')
     plt.grid(True)
     plt.legend(loc='upper right')
+    if title is not None:
+        plt.title(title)
+
+def analy_validate_file(filename):
+    td = np.loadtxt(filename)
+    analy_validate_data(td)
+    plt.show()
+
+def analy_roterr_file(filename):
+    td = np.loadtxt(filename)
+    analy_validate_data(td[0:100,:],'5degree error')
+    analy_validate_data(td[100:200,:],'10degree error')
+    analy_validate_data(td[200:300,:],'20degree error')
+    analy_validate_data(td[300:400,:],'30degree error')
     plt.show()
 
 
-
 if __name__=='__main__':
-    of = OrientationFit()
+    # of = OrientationFit()
     # of.sample()
-    of.validata()
+    # of.validata()
+    # of.sample_rot_err()
+    analy_roterr_file('./data/sample_roterr_data_2024-0717-102958.txt')
     # analy_validate_data("rpy_data_2024-0607-173626.txt")
