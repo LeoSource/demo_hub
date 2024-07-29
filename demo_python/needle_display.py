@@ -131,7 +131,7 @@ class NeedleGraph(object):
 if __name__=='__main__':
     mqtt_client = RobotMQTTClient('192.168.2.242')
     needle = NeedleGraph(mqtt_client)
-    # needle.display()
-    needle.animate()
+    needle.display()
+    # needle.animate()
     # needle = NeedleGraph(1)
     # needle.plot()
