@@ -4,6 +4,49 @@
 
 #define NUM_MOTORS 8
 
+namespace test_prmc
+{
+robot_master_input ExampleClass::_prm_fdb = robot_master_input(3);
+ExampleClass example(1,2);
+void task_read1()
+{
+	while(true)
+	{
+		auto a = example.get_value();
+		auto prm_fdb = example.get_master_feedback();
+		auto jm = prm_fdb.jpd.pos;
+
+		// std::cout<<"11"<<std::endl;
+	}
+}
+void task_read2()
+{
+	while (true)
+	{
+		auto a = example.get_value();
+		auto prm_fdb = example.get_master_feedback();
+        auto qm = std::vector<double>(prm_fdb.jpd.pos.data(),
+            prm_fdb.jpd.pos.data()+prm_fdb.jpd.pos.size());
+        json j;
+        j["master_joint"] = qm;
+
+		// std::cout<<"22"<<std::endl;
+	}
+	
+}
+void test_race_condition()
+{
+	std::thread task1(task_read1);
+	std::thread task2(task_read2);
+	while(true)
+	{
+		std::this_thread::sleep_for(std::chrono::seconds(2));
+		std::cout<<"main"<<std::endl;
+	}
+}
+}//namespace test_prmc
+
+
 namespace test_other
 {
 

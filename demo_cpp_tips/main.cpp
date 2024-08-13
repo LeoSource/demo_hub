@@ -23,5 +23,6 @@ int main(int, char**)
     // test_other::test_future();
     // test_other::test_combination();
     // test_other::test_thread_name();
-    test_other::test_arguments();
+    // test_other::test_arguments();
+    test_prmc::test_race_condition();
 }

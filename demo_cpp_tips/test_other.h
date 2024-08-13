@@ -170,6 +170,68 @@ public:
 }
 
 
+namespace test_prmc
+{
+struct joint_physical_data
+{
+    Eigen::VectorXd pos;
+    Eigen::VectorXd vel;
+    Eigen::VectorXd acc;
+    Eigen::VectorXd tau;
+
+    void init(int nj)
+    {
+        pos.setZero(nj);
+        vel.setZero(nj);
+        acc.setZero(nj);
+        tau.setZero(nj);
+    }
+};
+struct robot_master_input
+{
+    joint_physical_data jpd;
+    Eigen::VectorXd jp_auxiliary;
+    Eigen::Vector3d pos_tcp;
+    Eigen::Vector3d dir;
+    bool button_clutch,button_transverse,button_teleoperation,button_auto,button_stop;
+    double force_ext,force_offset,force_sensor;
+    robot_master_input(int nj)
+    {
+        jpd.init(nj);
+        jp_auxiliary.setZero(nj);
+        pos_tcp.setZero();
+        dir.setZero();
+        button_clutch = false;
+        button_transverse = false;
+        button_teleoperation = false;
+        button_auto = false;
+        button_stop = false;
+        force_ext = 0;
+        force_offset = 0;
+        force_sensor = 0;
+    }
+};
+class ExampleClass
+{
+public:
+	ExampleClass(int a, int b) : m_a(a), m_b(b) {}
+	void print() const { std::cout << "m_a = " << m_a << ", m_b = " << m_b << '\n'; }
+	int get_value() const { return m_a; }
+    robot_master_input get_master_feedback() const {return _prm_fdb;}
+private:
+	int m_a;
+	int m_b;
+	static robot_master_input _prm_fdb;
+};
+void test_race_condition();
+
+
+
+
+
+}
+
+
 namespace math_tools
 {
 
