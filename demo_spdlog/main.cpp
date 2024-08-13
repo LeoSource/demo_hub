@@ -1,6 +1,6 @@
 #include <iostream>
 #include <thread>
-#include <unistd.h>
+// #include <unistd.h>
 #include "spdlog_comm.h"
 #include "class_test.h"
 
@@ -22,7 +22,7 @@ int main(int argc, char **argv)
     while (true)
     {
         rt_log.log();
-        sleep(1);
+        // sleep(1);
     }
     
     return 0;
