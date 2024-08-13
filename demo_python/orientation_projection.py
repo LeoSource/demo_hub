@@ -42,13 +42,13 @@ def random_max_rpy(cone_angle,num_points=1):
     else:
         return rpy[:,0:2]
 
-def random_rpy(cone_angle):
+def random_rpy(cone_angle,num_points=1):
     h = 1
     r = h*math.tan(cone_angle)
-    theta = random.uniform(0,2*pi)
-    dir = np.array([r*math.cos(theta),r*math.sin(theta),h])
-    dir = dir/np.linalg.norm(dir)
-    rot_mat = parse_direction(dir)
+    theta = np.random.uniform(0,2*pi,num_points)
+    direction = np.array([r*np.cos(theta),r*np.sin(theta),h*np.ones(theta.shape)])
+    direction = direction/np.linalg.norm(direction)
+    rot_mat = parse_direction(direction)
     rpy = smb.tr2rpy(rot_mat,"zyx")
     return rpy[0:2]
 
@@ -87,7 +87,7 @@ class OrientationFit(object):
         if not self.is_robot_ready():
             return
         rpy_list = []
-        num = 500
+        num = 200
         for idx in range(num):
             rpy = random_max_rpy(30*d2r)
             self.send_traj([rpy.tolist()],idx+1)
@@ -141,7 +141,7 @@ class OrientationFit(object):
         if not self.is_robot_ready():
             return
         self.send_traj([[0,0]],0)
-        num_points = 2
+        num_points = 5
         rpy_list = []
         for idx in range(num_points):
             while True:
@@ -171,13 +171,13 @@ class OrientationFit(object):
         pub_data = {"name":"motion","slave":{
             "pos":via_pos,"type":"rpy","relative":False,
             "rcm-constraint":False,"joint-space":False,
-            "vel_ratio":6.0,"acc_ratio":10.0}}
+            "vel_ratio":8.0,"acc_ratio":16.0}}
         self.mqtt_client.pub_hr_robot(json.dumps(pub_data))
         time.sleep(0.5)
         while self.robot_state!=10:
             time.sleep(0.01)
         print(f'complete test trajectory {idx}')
-        time.sleep(2)
+        time.sleep(4)
 
     def start_record(self):
         pub_data = {"record":"start"}
@@ -235,15 +235,19 @@ def analy_repeaterr_data(vdata):
     alpha_err = alpha[0::2]-alpha[1::2]
     beta_err = beta[0::2]-beta[1::2]
     plt.figure()
-    plt.plot(alpha[0::2]*r2d)
-    plt.plot(alpha[1::2]*r2d)
-    plt.plot(vdata[0::2,2]*r2d)
+    plt.plot(alpha[0::2]*r2d,label='alpha+fdb')
+    plt.plot(alpha[1::2]*r2d,label='alpha-fdb')
+    plt.plot(vdata[0::2,2]*r2d,'--',label='alpha+cmd')
+    plt.plot(vdata[1::2,2]*r2d,'--',label='alpha-cmd')
     plt.grid(True)
+    plt.legend()
     plt.figure()
-    plt.plot(beta[0::2]*r2d)
-    plt.plot(beta[1::2]*r2d)
-    plt.plot(vdata[0::2,3]*r2d)
+    plt.plot(beta[0::2]*r2d,label='beta+fdb')
+    plt.plot(beta[1::2]*r2d,label='beta-fdb')
+    plt.plot(vdata[0::2,3]*r2d,'--',label='beta+cmd')
+    plt.plot(vdata[1::2,3]*r2d,'--',label='beta-cmd')
     plt.grid(True)
+    plt.legend()
     plt.figure()
     plt.plot(alpha_err*r2d,label='alpha_err')
     plt.plot(beta_err*r2d,label='beta_err')
@@ -264,8 +268,12 @@ def analy_roterr_file(filename):
     plt.show()
 
 def analy_repeaterr_file(filename):
-    td = np.loadtxt(filename)
-    analy_repeaterr_data(td)
+    if isinstance(filename,str):
+        data_set = np.loadtxt(filename)
+    elif isinstance(filename,list):
+        data_set = np.vstack([np.loadtxt(file) for file in filename])
+
+    analy_repeaterr_data(data_set)
     plt.show()
 
 
@@ -274,8 +282,19 @@ if __name__=='__main__':
     # of.sample()
     # rpy_data = of.validata()
     # analy_validate_data(rpy_data)
-    # of.sample_rot_err()
-    rpy_data = of.sample_repeat_err()
-    analy_repeaterr_data(rpy_data)
+    for _ in range(10):
+        # rpy_data = of.sample_rot_err()
+        rpy_data = of.validata()
+    # rpy_data = of.sample_repeat_err()
+    # analy_repeaterr_data(rpy_data)
+    # plt.show()
     # analy_roterr_file('./data/sample_roterr_data_2024-0717-102958.txt')
-    # analy_repeaterr_file('./data/sample_repeaterr_data_2024-0726-134024.txt')
+    # analy_repeaterr_file(['./data/sample_repeaterr_data_2024-0729-183225.txt',
+    #                       './data/sample_repeaterr_data_2024-0729-191327.txt',
+    #                       './data/sample_repeaterr_data_2024-0729-181516.txt',
+    #                       './data/sample_repeaterr_data_2024-0729-194525.txt'])
+    # analy_repeaterr_file(['./data/sample_repeaterr_data_2024-0801-164133.txt',
+    #                       './data/sample_repeaterr_data_2024-0801-165257.txt',
+    #                       './data/sample_repeaterr_data_2024-0801-170719.txt',
+    #                       './data/sample_repeaterr_data_2024-0801-171958.txt',
+    #                       './data/sample_repeaterr_data_2024-0801-173023.txt'])
