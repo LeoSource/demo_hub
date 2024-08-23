@@ -19,7 +19,8 @@ int main(int, char**)
     // test_eigen::test_eigen();
     // test_eigen::test_lambda();
     // test_eigen::test_eigen_error();
-    test_eigen::test_nonlinear_equation();
+    // test_eigen::test_nonlinear_equation();
+    test_eigen::test_neural_network();
     while (true)
     {
         std::this_thread::sleep_for(std::chrono::microseconds(500));
