@@ -15,6 +15,7 @@ demo_Eigen/.vscode/
 demo_cpp_tips/build/
 
 demo_python/__pycache__
+demo_python/d2l_practice/__pycache__
 demo_python/.vscode
 demo_python/data/
 demo_python/*.mha

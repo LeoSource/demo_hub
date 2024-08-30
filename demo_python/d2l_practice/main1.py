@@ -9,6 +9,7 @@ from dataset import pdf_data, load_as_numpy, load_as_torch, mapminmax
 from model import MyNetModule, SimpleModel
 from trainer import train
 from predicter import predict
+import joblib
 
 
 file_dir= 'F:/0_project/prca/data/2#datasets'
@@ -29,10 +30,10 @@ net = nn.Sequential(nn.Linear(4,32,dtype=torch.float64),
                     nn.LayerNorm(32,dtype=torch.float64),
                     nn.Tanh(),
                     nn.Linear(32,2,dtype=torch.float64))
-# net = SimpleModel(4,20,2,training)
+# net = SimpleModel(4,32,2,training)
 
 if training:
-    train(net=net,datasets=datasets,train_ratio=0.85,max_epochs=100)
+    train(net=net,datasets=datasets,train_ratio=0.85,max_epochs=500)
 else:
     net = nn.Sequential(nn.Linear(4,32),nn.Tanh(),nn.Linear(32,2))
     w1 = np.loadtxt('F:/0_project/prca/src/w1.txt')
@@ -43,6 +44,11 @@ else:
     net[0].bias.data = torch.tensor(b1,dtype=torch.float64)
     net[2].weight.data = torch.tensor(w2,dtype=torch.float64)
     net[2].bias.data = torch.tensor(b2,dtype=torch.float64)
+
+# save the model
+torch.save(net, './nn_model2.pth')
+joblib.dump(input_scaler,'./input_scaler2.joblib')
+joblib.dump(output_scaler,'./output_scaler2.joblib')
 
 
 # predict and compare
