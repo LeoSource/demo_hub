@@ -1,0 +1,4 @@
+python rotation_fit.py --input_scaler input_scaler3.joblib --output_scaler output_scaler3.joblib --nn_model nn_model3.pth --xgb_model xgb_model3.joblib
+
+./rotation_fit --input_scaler input_scaler3.joblib --output_scaler output_scaler3.joblib --nn_model nn_model3.pth --xgb_model xgb_model3.joblib
+

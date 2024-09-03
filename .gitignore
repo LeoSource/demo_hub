@@ -16,6 +16,11 @@ demo_cpp_tips/build/
 
 demo_python/__pycache__
 demo_python/d2l_practice/__pycache__
+demo_python/d2l_practice/.venv
+demo_python/rotation_fit/__pycache__
+demo_python/rotation_fit/.venv
+demo_python/rotation_fit/dist
+demo_python/rotation_fit/build
 demo_python/.vscode
 demo_python/data/
 demo_python/*.mha
