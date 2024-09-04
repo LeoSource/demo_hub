@@ -503,6 +503,66 @@ void eigenVec2vector()
     cout << "---------------------------------------------------------------------" << endl;
 }
 
+void array2d2eigenMat()
+{
+    int arr[3][3] = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
+    Eigen::Map<Eigen::Matrix<int, 3, 3>> matrix(*arr);
+    Eigen::Matrix3i mat1 = Eigen::Map<Eigen::Matrix3i>((int*)arr);
+    std::cout << "Eigen matrix:\n" << matrix << std::endl;
+    arr[0][0] = 9;
+    std::cout << "Eigen matrix:\n" << matrix << std::endl;
+    std::cout << "Eigen matrix1:\n" << mat1 << std::endl;
+}
+
+void eigenMat2array2d()
+{
+    Eigen::Matrix<int, 3, 3> matrix;
+    matrix << 1, 2, 3,
+              4, 5, 6,
+              7, 8, 9;
+    int (*arr)[3] = new int[3][3];
+    Eigen::Map<Eigen::Matrix<int, 3, 3>>(*arr,3,3) = matrix;
+    std::cout << "2d array:\n";
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            std::cout << arr[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+    delete[] arr;
+}
+
+void vector2d2eigenMat()
+{
+    std::vector<std::vector<int>> vec2d = {{1,2,3},{4,5,6},{7,8,9}};
+    Eigen::MatrixXi matrix2(vec2d.size(), vec2d[0].size());
+    for (int i = 0; i < vec2d.size(); ++i) {
+        matrix2.row(i) = Eigen::Map<VectorXi>(vec2d[i].data(), vec2d[i].size());
+    }
+    std::cout << "Eigen matrix:\n" << matrix2 << std::endl;
+}
+
+void eigenMat2vector2d()
+{
+    Eigen::Matrix<int, 3, 3> matrix;
+    matrix << 1, 2, 3,
+              4, 5, 6,
+              7, 8, 9;
+    std::cout << "Eigen matrix:\n" << matrix << std::endl;
+    vector<vector<int>> vec2d(3);
+    for (int i = 0; i < matrix.rows(); ++i) {
+        VectorXi tmp = matrix.row(i);//necessary copy operation
+        vec2d[i] = std::vector<int>(tmp.data(), tmp.data() + tmp.size());
+    }
+    std::cout << "2d vector:\n";
+    for (const auto& row : vec2d) {
+        for (int value : row) {
+            std::cout << value << " ";
+        }
+        std::cout << std::endl;
+    }
+}
+
 void test_random_matrix()
 {
     Eigen::VectorXd q = Eigen::VectorXd::Random(5);

@@ -28,6 +28,12 @@ namespace test_eigen
 	void vector2eigenVec();
 	void eigenVec2vector();
 
+	void array2d2eigenMat();
+	void eigenMat2array2d();
+
+	void vector2d2eigenMat();
+	void eigenMat2vector2d();
+
 	void test_random_matrix();
 
 	void test_eigen();

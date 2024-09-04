@@ -20,6 +20,7 @@ int main(int, char**)
     // test_eigen::test_lambda();
     // test_eigen::test_eigen_error();
     // test_eigen::test_nonlinear_equation();
+    test_eigen::eigenMat2vector2d();
     test_eigen::test_neural_network();
     while (true)
     {
