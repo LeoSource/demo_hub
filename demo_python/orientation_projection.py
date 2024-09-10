@@ -65,7 +65,7 @@ class OrientationFit(object):
         j = json.loads(msg.payload)
         self.robot_state = j["robot_state"]
         self.rpy = np.array(j["rpy"])
-        self.jps = np.array(j["position_joint"])
+        self.jp = np.array(j["position_joint"])
 
     def sample(self):
         if not self.is_robot_ready():
@@ -87,14 +87,14 @@ class OrientationFit(object):
         if not self.is_robot_ready():
             return
         rpy_list = []
-        num = 200
+        num = 100
         for idx in range(num):
             rpy = random_max_rpy(30*d2r)
             self.send_traj([rpy.tolist()],idx+1)
-            rpy_list.append(np.hstack((self.rpy[0:2],rpy,self.jps[2:4])))
+            rpy_list.append(np.hstack((self.rpy[0:2],rpy,self.jp[2:4])))
         rpy_np = np.array(rpy_list)
         t = time.strftime('%Y-%m%d-%H%M%S',time.localtime())
-        filename = './data/validata_rpy_'+t+'.txt'
+        filename = './data/validata_rpy3_'+t+'.txt'
         np.savetxt(filename,rpy_np,delimiter=' ',fmt='%.8f')
         print('save data successfully!')
         return rpy_np
@@ -111,7 +111,7 @@ class OrientationFit(object):
             for idx in range(num):
                 rpy = random_rpy(deg*d2r)
                 self.send_traj([rpy.tolist()],idx+1)
-                rpy_list.append(np.hstack((self.rpy[0:2],rpy,self.jps[2:4])))
+                rpy_list.append(np.hstack((self.rpy[0:2],rpy,self.jp[2:4])))
         rpy_np = np.array(rpy_list)
         t = time.strftime('%Y-%m%d-%H%M%S',time.localtime())
         filename = './data/sample_roterr_data_'+t+'.txt'
@@ -129,7 +129,7 @@ class OrientationFit(object):
         for idx in range(num):
             alpha = random.uniform(-30*d2r,30*d2r)
             self.send_traj([[alpha,0]],idx+1)
-            rpy_list.append(np.hstack((self.rpy[0:2],np.array([alpha,0]),self.jps[2:4])))
+            rpy_list.append(np.hstack((self.rpy[0:2],np.array([alpha,0]),self.jp[2:4])))
         rpy_np = np.array(rpy_list)
         t = time.strftime('%Y-%m%d-%H%M%S',time.localtime())
         filename = './data/sample_roterr_data_'+t+'.txt'
@@ -157,7 +157,7 @@ class OrientationFit(object):
                 rpy_send = rpy_sort[0] if loop%2==0 else rpy_sort[2]
                 self.send_traj([rpy_send.tolist()],loop+1)
                 self.send_traj([rpy_sort[1].tolist()],loop+1)
-                rpy_list.append(np.hstack((self.rpy[0:2],rpy_sort[1],self.jps[2:4])))
+                rpy_list.append(np.hstack((self.rpy[0:2],rpy_sort[1],self.jp[2:4])))
 
         rpy_np = np.array(rpy_list)
         t = time.strftime('%Y-%m%d-%H%M%S',time.localtime())
