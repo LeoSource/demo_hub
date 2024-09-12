@@ -87,7 +87,7 @@ class RobotOperationManager:
             print('robot is not ready!!')
             return False
 
-    def calibrate_master_gear_ratio(self,jidx:int):
+    def sample_master_gear_ratio(self,jidx:int):
         if not self.is_robot_ready():
             return
         q_ready = np.array([0,0,self.jp[7]])
@@ -118,12 +118,12 @@ class RobotOperationManager:
 
         jpos_np = np.array(self.jpos)
         t = time.strftime('%Y-%m%d-%H%M%S',time.localtime())
-        filename = './data/calibrate_master_ratio'+str(jidx)+'_'+t+'.txt'
+        filename = './data/sample_master_ratio'+str(jidx)+'_'+t+'.txt'
         np.savetxt(filename,jpos_np,delimiter=' ',fmt='%.8f')
         print('save data successfully!')
         return jpos_np
     
-    def calibrate_slave_gear_ratio(self,jidx:int):
+    def sample_slave_gear_ratio(self,jidx:int):
         if not self.is_robot_ready():
             return
         q_ready = np.array([0.023,0.026,-0.5819,0.5819,0.005])
@@ -153,7 +153,7 @@ class RobotOperationManager:
 
         jpos_np = np.array(self.jpos)
         t = time.strftime('%Y-%m%d-%H%M%S',time.localtime())
-        filename = './data/calibrate_slave_ratio'+str(jidx)+'_'+t+'.txt'
+        filename = './data/sample_slave_ratio'+str(jidx)+'_'+t+'.txt'
         np.savetxt(filename,jpos_np,delimiter=' ',fmt='%.8f')
         print('save data successfully!')
         return jpos_np
@@ -225,7 +225,7 @@ class RobotOperationManager:
         print('save data successfully!')
         return rpy_np
     
-    def sample_repeat_rot(self):
+    def sample_backlash_rot(self):
         if not self.is_robot_ready():
             return
         self._send_slave_rpy_traj([[0,0]],0)
@@ -249,7 +249,7 @@ class RobotOperationManager:
 
         rpy_np = np.array(rpy_list)
         t = time.strftime('%Y-%m%d-%H%M%S',time.localtime())
-        filename = './data/sample_repeat_rot_'+t+'.txt'
+        filename = './data/sample_backlash_rot'+t+'.txt'
         np.savetxt(filename,rpy_np,delimiter=' ',fmt='%.8f')
         print('save data successfully!')
         return rpy_np
@@ -307,8 +307,14 @@ def analy_calib_data(tdata,midx:int,aidx:int):
         dis_ba.append(datab[idx+1,aidx]-datab[idx,aidx])
     gear_ratio_f = np.abs(np.array(dis_fm))/np.abs(np.array(dis_fa))
     gear_ratio_b = np.abs(np.array(dis_bm))/np.abs(np.array(dis_ba))
-    r = 0.5*(gear_ratio_f.mean()+gear_ratio_b.mean())
-    print(f'gear ratio is {r}')
+    ratio = np.hstack((gear_ratio_f,gear_ratio_b))
+    r = ratio.mean()
+    vr = max(ratio.max()-1.,1.-ratio.min())
+    ra = ratio.max()-ratio.min()
+    print(f'mean gear ratio is {r:.6f}')
+    print(f'maximum variation of gear ratio is {vr:.6f}')
+    print(f'maximum range of gear ratio is {ra:.6f}')
+
     return r
 
 def analy_calib_file(filename,midx:int,aidx:int):
@@ -402,15 +408,16 @@ def analy_repeat_rot_file(filename):
 
 def calib_gear_ratio():
     # rom = RobotOperationManager('192.168.2.242')
-    # rom.calibrate_master_gear_ratio(2)
-    # rom.calibrate_slave_gear_ratio(1)
-    analy_calib_file('./data/calibrate_slave_ratio4_2024-0911-131145.txt',midx=4,aidx=12)
+    # rom.sample_master_gear_ratio(2)
+    # rom.sample_slave_gear_ratio(1)
+    analy_calib_file('./data/calibrate_master_ratio2_2024-0911-134608.txt',midx=7,aidx=15)
 
 def calib_rot_params():
-    rom = RobotOperationManager('192.168.2.242')
-    for _ in range(10):
+    # rom = RobotOperationManager('192.168.2.242')
+    # rom.sample_backlash_rot()
+    # for _ in range(10):
         # rpy_data = of.sample_rot_err()
-        rpy_data = rom.sample_random_rot()
+        # rpy_data = rom.sample_random_rot()
     # analy_concentric_rot_file('./data/sample_roterr_data_2024-0717-102958.txt')
     # analy_repeat_rot_file(['./data/sample_repeaterr_data_2024-0729-183225.txt',
     #                       './data/sample_repeaterr_data_2024-0729-191327.txt',
@@ -421,7 +428,9 @@ def calib_rot_params():
     #                       './data/sample_repeaterr_data_2024-0801-170719.txt',
     #                       './data/sample_repeaterr_data_2024-0801-171958.txt',
     #                       './data/sample_repeaterr_data_2024-0801-173023.txt'])
+    analy_repeat_rot_file(['./data/sample_repeat_rot_2024-0911-173143.txt',
+                           './data/sample_repeat_rot_2024-0911-175053.txt'])
 
 if __name__=='__main__':
-    # calib_gear_ratio()
-    calib_rot_params()
+    calib_gear_ratio()
+    # calib_rot_params()
