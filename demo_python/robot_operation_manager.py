@@ -66,6 +66,7 @@ class RobotOperationManager:
         j = json.loads(msg.payload)
         self.robot_state = j["robot_state"]
         self.jp = np.array(j["position_joint"])
+        # self.jp[2:4] *= D2R
         self.rpy = np.array(j["rpy"])
 
     def on_topic_response_robot(self,client,userdata,msg):
@@ -164,7 +165,7 @@ class RobotOperationManager:
         self.start_record()
         self._send_slave_rpy_traj([[0,0],[10*D2R,0],[-10*D2R,0],[0,0]],1)
         self._send_slave_rpy_traj([[20*D2R,10*D2R],[-20*D2R,10*D2R],[0,0]],2)
-        self.send_send_slave_rpy_traj_traj([[30*D2R,5*D2R],[-30*D2R,5*D2R],[0,0]],3)
+        self._send_slave_rpy_traj_traj([[30*D2R,5*D2R],[-30*D2R,5*D2R],[0,0]],3)
         self._send_slave_rpy_traj([[0,10*D2R],[0,-10*D2R],[0,0]],4)
         self._send_slave_rpy_traj([[10*D2R,20*D2R],[10*D2R,-20*D2R],[0,0]],5)
         self._send_slave_rpy_traj([[5*D2R,30*D2R],[5*D2R,-30*D2R],[0,0]],6)
@@ -229,19 +230,23 @@ class RobotOperationManager:
         if not self.is_robot_ready():
             return
         self._send_slave_rpy_traj([[0,0]],0)
-        num_points = 5
+        num_points = 10
         rpy_list = []
         for idx in range(num_points):
             while True:
                 rpy = random_max_rpy(30*D2R,3)
                 rpy_sort = np.sort(rpy,axis=0)
+                alpha_diff = np.diff(rpy_sort[:,0])
+                beta_diff = np.diff(rpy_sort[:,1])
+                if np.random.rand()>0.5:
+                    rpy_sort[:,1] = reversed(rpy_sort[:,1])
                 theta = np.zeros(len(rpy))
                 for idx,py in enumerate(rpy_sort):
                     rmat = smb.roty(py[1])@smb.rotx(py[0])
                     theta[idx],_ = smb.tr2angvec(rmat)
-                if (theta<30*D2R).all():
+                if (theta<30*D2R).all() and (alpha_diff>6*D2R).all() and (beta_diff>6*D2R).all():
                     break
-            for loop in range(20):
+            for loop in range(4):
                 rpy_send = rpy_sort[0] if loop%2==0 else rpy_sort[2]
                 self._send_slave_rpy_traj([rpy_send.tolist()],loop+1)
                 self._send_slave_rpy_traj([rpy_sort[1].tolist()],loop+1)
@@ -249,10 +254,79 @@ class RobotOperationManager:
 
         rpy_np = np.array(rpy_list)
         t = time.strftime('%Y-%m%d-%H%M%S',time.localtime())
-        filename = './data/sample_backlash_rot'+t+'.txt'
+        filename = './data/sample_backlash_rot_'+t+'.txt'
         np.savetxt(filename,rpy_np,delimiter=' ',fmt='%.8f')
         print('save data successfully!')
         return rpy_np
+
+    def sample_backlash_slave(self,jidx:int,jtype='prismatic'):
+        if not self.is_robot_ready():
+            return
+        threshold_diff = 0.01 if jtype == 'prismatic' else 5*D2R
+        q_ready = np.array([0.023,0.026,-0.5819,0.5819,0.005])
+        self._send_slave_joint_traj(q_ready,0,False)
+        jpmax = np.array([0.045,0.058,0.349,1.1,0.095])
+        jpmin = np.array([0.005,0.005,-1.08,-0.349,0.005])
+        q = self.jp[0:5].copy()
+        num_points = 20
+        for idx in range(num_points):
+            while True:
+                qseg = jpmin[jidx]+(jpmax[jidx]-jpmin[jidx])*np.random.rand(3)
+                qseg = np.sort(qseg)
+                qdelta = np.diff(qseg)
+                if (qdelta>threshold_diff).all():
+                    break
+            q[jidx] = qseg[0]
+            self._send_slave_joint_traj(q,idx,False)
+            q[jidx] = qseg[1]
+            self._send_slave_joint_traj(q,idx,True)
+            q[jidx] = qseg[2]
+            self._send_slave_joint_traj(q,idx,False)
+            q[jidx] = qseg[1]
+            self._send_slave_joint_traj(q,idx,True)
+        self._send_slave_joint_traj(q_ready,0,False)
+
+        jpos_np = np.array(self.jpos)
+        t = time.strftime('%Y-%m%d-%H%M%S',time.localtime())
+        filename = './data/sample_backlash_slave'+str(jidx)+'_'+t+'.txt'
+        np.savetxt(filename,jpos_np,delimiter=' ',fmt='%.8f')
+        print('save data successfully!')
+        return jpos_np
+
+    def sample_backlash_master(self,jidx:int,jtype='prismatic'):
+        if not self.is_robot_ready():
+            return
+        threshold_diff = 0.01 if jtype == 'prismatic' else 5*D2R
+        q_ready = np.array([0,0,self.jp[7]])
+        self._send_master_traj(q_ready,0,False)
+        q0 = self.jp[jidx+5]
+        jpmax = np.array([8*D2R, 8*D2R, q0+0.06])
+        jpmin = np.array([-8*D2R, -8*D2R, q0+0.002])
+        q = self.jp[5:].copy()
+        num_points = 20
+        for idx in range(num_points):
+            while True:
+                qseg = jpmin[jidx]+(jpmax[jidx]-jpmin[jidx])*np.random.rand(3)
+                qseg = np.sort(qseg)
+                qdelta = np.diff(qseg)
+                if (qdelta>threshold_diff).all():
+                    break
+            q[jidx] = qseg[0]
+            self._send_master_traj(q,idx,False)
+            q[jidx] = qseg[1]
+            self._send_master_traj(q,idx,True)
+            q[jidx] = qseg[2]
+            self._send_master_traj(q,idx,False)
+            q[jidx] = qseg[1]
+            self._send_master_traj(q,idx,True)
+        self._send_master_traj(q_ready,0,False)
+
+        jpos_np = np.array(self.jpos)
+        t = time.strftime('%Y-%m%d-%H%M%S',time.localtime())
+        filename = './data/sample_backlash_master'+str(jidx)+'_'+t+'.txt'
+        np.savetxt(filename,jpos_np,delimiter=' ',fmt='%.8f')
+        print('save data successfully!')
+        return jpos_np
 
     def start_record(self):
         pub_data = {"record":"start"}
@@ -294,7 +368,7 @@ class RobotOperationManager:
             time.sleep(1)
 
 
-def analy_calib_data(tdata,midx:int,aidx:int):
+def analy_calib_ratio_data(tdata,midx:int,aidx:int):
     num = int(tdata.shape[0]/2)
     dataf = tdata[:num,:]
     datab = np.flip(tdata[num:,:],axis=0)
@@ -314,15 +388,14 @@ def analy_calib_data(tdata,midx:int,aidx:int):
     print(f'mean gear ratio is {r:.6f}')
     print(f'maximum variation of gear ratio is {vr:.6f}')
     print(f'maximum range of gear ratio is {ra:.6f}')
-
     return r
 
-def analy_calib_file(filename,midx:int,aidx:int):
+def analy_calib_ratio_file(filename,midx:int,aidx:int):
     if isinstance(filename,str):
         tdata = np.loadtxt(filename)
     elif isinstance(filename,list):
         tdata = np.vstack([np.loadtxt(f) for f in filename])
-    analy_calib_data(tdata,midx,aidx)
+    analy_calib_ratio_data(tdata,midx,aidx)
     plt.figure()
     plt.plot(tdata[:,midx],label='motor encoder')
     plt.plot(tdata[:,aidx],label='auxiliary encoder')
@@ -370,7 +443,7 @@ def analy_concentric_rot_file(filename):
     analy_random_rot_data(td[300:400,:],'30degree error')
     plt.show()
 
-def analy_repeat_rot_data(vdata):
+def analy_backlash_rot_data(vdata):
     num_points = vdata.shape[0]
     alpha = vdata[:,0]
     beta = vdata[:,1]
@@ -395,42 +468,72 @@ def analy_repeat_rot_data(vdata):
     plt.plot(beta_err*R2D,label='beta_err')
     plt.grid(True)
     plt.legend(loc='upper right')
+    alpha_backlash = np.abs(alpha_err*R2D)
+    beta_backlash = np.abs(beta_err*R2D)
+    print(f'mean alpha backlash is {alpha_backlash.mean():.6f}deg')
+    print(f'mean beta backlash is {beta_backlash.mean():.6f}deg')
+    print(f'maximum alpha backlash is {alpha_backlash.max():.6f}deg')
+    print(f'maximum beta backlash is {beta_backlash.max():.6f}deg')
 
-def analy_repeat_rot_file(filename):
+def analy_backlash_joint_data(tdata,midx:int,aidx:int,jtype):
+    unit = 'mm' if jtype=='prismatic' else 'deg'
+    unit_trans = 1000 if jtype=='prismatic' else R2D
+    dis = []
+    pos_motor = tdata[:,midx]
+    pos_aux = tdata[:,aidx]
+    pos_err = np.abs(pos_aux[0::2]-pos_aux[1::2])
+    b = pos_err.mean()*unit_trans
+    bmax = pos_err.max()*unit_trans
+    print(f'mean backlash is {b:.6f}{unit}')
+    print(f'maximum backlash is {bmax:.6f}{unit}') 
+
+def analy_backlash_rot_file(filename):
     if isinstance(filename,str):
         data_set = np.loadtxt(filename)
     elif isinstance(filename,list):
         data_set = np.vstack([np.loadtxt(file) for file in filename])
-    analy_repeat_rot_data(data_set)
+    analy_backlash_rot_data(data_set)
     plt.show()
 
-
+def analy_backlash_joint_file(filename,midx:int,aidx:int,jtype='prismatic'):
+    if isinstance(filename,str):
+        tdata = np.loadtxt(filename)
+    elif isinstance(filename,list):
+        tdata = np.vstack([np.loadtxt(file) for file in filename])
+    analy_backlash_joint_data(tdata,midx,aidx,jtype)
 
 def calib_gear_ratio():
     # rom = RobotOperationManager('192.168.2.242')
     # rom.sample_master_gear_ratio(2)
     # rom.sample_slave_gear_ratio(1)
-    analy_calib_file('./data/calibrate_master_ratio2_2024-0911-134608.txt',midx=7,aidx=15)
+    analy_calib_ratio_file('./data/calibrate_master_ratio2_2024-0911-134608.txt',midx=7,aidx=15)
 
 def calib_rot_params():
-    # rom = RobotOperationManager('192.168.2.242')
-    # rom.sample_backlash_rot()
+    rom = RobotOperationManager('192.168.2.242')
     # for _ in range(10):
-        # rpy_data = of.sample_rot_err()
         # rpy_data = rom.sample_random_rot()
     # analy_concentric_rot_file('./data/sample_roterr_data_2024-0717-102958.txt')
-    # analy_repeat_rot_file(['./data/sample_repeaterr_data_2024-0729-183225.txt',
+
+def calib_backlash():
+    # rom = RobotOperationManager('192.168.2.242')
+    # rom.sample_backlash_slave(4)
+    # rom.sample_backlash_master(0,jtype='rotary')
+    # rom.sample_backlash_rot()
+    analy_backlash_joint_file('./data/sample_backlash_master1_2024-0912-151624.txt',midx=6,aidx=14,jtype='rotary')
+    # analy_backlash_rot_file(['./data/sample_backlash_rot2024-0913-093650.txt',
+    #                        './data/sample_backlash_rot_2024-0913-094411.txt'])
+    # analy_backlash_rot_file(['./data/sample_repeaterr_data_2024-0729-183225.txt',
     #                       './data/sample_repeaterr_data_2024-0729-191327.txt',
     #                       './data/sample_repeaterr_data_2024-0729-181516.txt',
     #                       './data/sample_repeaterr_data_2024-0729-194525.txt'])
-    # analy_repeat_rot_file(['./data/sample_repeaterr_data_2024-0801-164133.txt',
+    # analy_backlash_rot_file(['./data/sample_repeaterr_data_2024-0801-164133.txt',
     #                       './data/sample_repeaterr_data_2024-0801-165257.txt',
     #                       './data/sample_repeaterr_data_2024-0801-170719.txt',
     #                       './data/sample_repeaterr_data_2024-0801-171958.txt',
     #                       './data/sample_repeaterr_data_2024-0801-173023.txt'])
-    analy_repeat_rot_file(['./data/sample_repeat_rot_2024-0911-173143.txt',
-                           './data/sample_repeat_rot_2024-0911-175053.txt'])
+
 
 if __name__=='__main__':
-    calib_gear_ratio()
+    # calib_gear_ratio()
+    calib_backlash()
     # calib_rot_params()
