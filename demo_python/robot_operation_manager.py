@@ -88,6 +88,15 @@ class RobotOperationManager:
             print('robot is not ready!!')
             return False
 
+    def run_random_joint(self):
+        jpmin = np.array([0.005,0.005,-0.8,-0.1,0.005])
+        jpmax = np.array([0.05,0.05,0.1,0.8,0.08])
+        loop = 0
+        while True:
+            q = jpmin+(jpmax-jpmin)*np.random.rand(5)
+            self._send_slave_joint_traj(q,loop,False)
+            loop += 1
+
     def sample_master_gear_ratio(self,jidx:int):
         if not self.is_robot_ready():
             return
@@ -259,73 +268,63 @@ class RobotOperationManager:
         print('save data successfully!')
         return rpy_np
 
-    def sample_backlash_slave(self,jidx:int,jtype='prismatic'):
+    def sample_backlash_slave(self,jidx:int,is_prismatic:bool,sort=True):
+        self._sample_backlash_joint(jidx,is_prismatic,'slave',sort)
+
+    def sample_backlash_master(self,jidx:int,is_prismatic:bool,sort=True):
+        self._sample_backlash_joint(jidx,is_prismatic,'master',sort)
+
+    def _sample_backlash_joint(self,jidx:int,is_prismatic:bool,part:str,sort=True):
         if not self.is_robot_ready():
             return
-        threshold_diff = 0.01 if jtype == 'prismatic' else 5*D2R
-        q_ready = np.array([0.023,0.026,-0.5819,0.5819,0.005])
-        self._send_slave_joint_traj(q_ready,0,False)
-        jpmax = np.array([0.045,0.058,0.349,1.1,0.095])
-        jpmin = np.array([0.005,0.005,-1.08,-0.349,0.005])
-        q = self.jp[0:5].copy()
-        num_points = 20
+        threshold_diff = 0.01 if is_prismatic else 5*D2R
+        num_points = 100
+        if part=='slave':
+            q_ready = np.array([0.023,0.026,-0.5819,0.5819,0.005])
+            jpmax = np.array([0.045,0.058,0.349,1.1,0.095])
+            jpmin = np.array([0.005,0.005,-1.08,-0.349,0.005])
+            q = self.jp[0:5].copy()
+            jpos_cmd = np.zeros((num_points*2,5)) if sort else np.zeros((num_points,5))
+        elif part=='master':
+            q_ready = np.array([0,0,self.jp[7]])
+            q0 = self.jp[jidx+5]
+            jpmax = np.array([8*D2R, 8*D2R, q0+0.06])
+            jpmin = np.array([-8*D2R, -8*D2R, q0+0.002])
+            q = self.jp[5:].copy()
+            jpos_cmd = np.zeros((num_points*2,3)) if sort else np.zeros((num_points,3))
+        self._send_joint_traj(q_ready,0,False,part)
         for idx in range(num_points):
-            while True:
-                qseg = jpmin[jidx]+(jpmax[jidx]-jpmin[jidx])*np.random.rand(3)
-                qseg = np.sort(qseg)
-                qdelta = np.diff(qseg)
-                if (qdelta>threshold_diff).all():
-                    break
-            q[jidx] = qseg[0]
-            self._send_slave_joint_traj(q,idx,False)
-            q[jidx] = qseg[1]
-            self._send_slave_joint_traj(q,idx,True)
-            q[jidx] = qseg[2]
-            self._send_slave_joint_traj(q,idx,False)
-            q[jidx] = qseg[1]
-            self._send_slave_joint_traj(q,idx,True)
-        self._send_slave_joint_traj(q_ready,0,False)
+            if sort:
+                while True:
+                    qseg = jpmin[jidx]+(jpmax[jidx]-jpmin[jidx])*np.random.rand(3)
+                    qseg = np.sort(qseg)
+                    qdelta = np.diff(qseg)
+                    if (qdelta>threshold_diff).all():
+                        break
+                q[jidx] = qseg[0]
+                self._send_joint_traj(q,idx,False,part)
+                q[jidx] = qseg[1]
+                self._send_joint_traj(q,idx,True,part)
+                jpos_cmd[2*idx] = q
+                q[jidx] = qseg[2]
+                self._send_joint_traj(q,idx,False,part)
+                q[jidx] = qseg[1]
+                self._send_joint_traj(q,idx,True,part)
+                jpos_cmd[2*idx+1] = q
+            else:
+                while True:
+                    q[jidx] = jpmin[jidx]+(jpmax[jidx]-jpmin[jidx])*np.random.rand()
+                    if abs(q[jidx]-self.jp[jidx])>threshold_diff:
+                        break
+                self._send_joint_traj(q,idx,True,part)
+                jpos_cmd[idx] = q
 
-        jpos_np = np.array(self.jpos)
-        t = time.strftime('%Y-%m%d-%H%M%S',time.localtime())
-        filename = './data/sample_backlash_slave'+str(jidx)+'_'+t+'.txt'
-        np.savetxt(filename,jpos_np,delimiter=' ',fmt='%.8f')
-        print('save data successfully!')
-        return jpos_np
 
-    def sample_backlash_master(self,jidx:int,jtype='prismatic'):
-        if not self.is_robot_ready():
-            return
-        threshold_diff = 0.01 if jtype == 'prismatic' else 5*D2R
-        q_ready = np.array([0,0,self.jp[7]])
-        self._send_master_traj(q_ready,0,False)
-        q0 = self.jp[jidx+5]
-        jpmax = np.array([8*D2R, 8*D2R, q0+0.06])
-        jpmin = np.array([-8*D2R, -8*D2R, q0+0.002])
-        q = self.jp[5:].copy()
-        num_points = 20
-        for idx in range(num_points):
-            while True:
-                qseg = jpmin[jidx]+(jpmax[jidx]-jpmin[jidx])*np.random.rand(3)
-                qseg = np.sort(qseg)
-                qdelta = np.diff(qseg)
-                if (qdelta>threshold_diff).all():
-                    break
-            q[jidx] = qseg[0]
-            self._send_master_traj(q,idx,False)
-            q[jidx] = qseg[1]
-            self._send_master_traj(q,idx,True)
-            q[jidx] = qseg[2]
-            self._send_master_traj(q,idx,False)
-            q[jidx] = qseg[1]
-            self._send_master_traj(q,idx,True)
-        self._send_master_traj(q_ready,0,False)
-
-        jpos_np = np.array(self.jpos)
-        t = time.strftime('%Y-%m%d-%H%M%S',time.localtime())
-        filename = './data/sample_backlash_master'+str(jidx)+'_'+t+'.txt'
-        np.savetxt(filename,jpos_np,delimiter=' ',fmt='%.8f')
-        print('save data successfully!')
+        self._send_joint_traj(q_ready,0,False,part)
+        postfix = 'sort' if sort else 'nosort'
+        jpos_np = np.hstack((np.array(self.jpos),jpos_cmd))
+        filename = 'sample_backlash_'+part+str(jidx)+'_'+postfix
+        self._save_data(jpos_np,filename)
         return jpos_np
 
     def start_record(self):
@@ -338,10 +337,16 @@ class RobotOperationManager:
         self.mqtt_client.pub_record_data(json.dumps(pub_data),qos=2)
         time.sleep(1)
 
+    def _send_joint_traj(self,via_pos,idx:int,with_aux:bool,part:str):
+        if part=='slave':
+            self._send_slave_joint_traj(via_pos,idx,with_aux)
+        elif part=='master':
+            self._send_master_traj(via_pos,idx,with_aux)
+
     def _send_slave_joint_traj(self,via_pos,idx:int,with_aux:bool):
         pub_data = {"name":"motion","slave":{"pos":[via_pos.tolist()],"relative":False,"type":"joint",
                                              "rcm-constraint":False,"joint-space":True,
-                                             "vel_ratio":3.0,"acc_ratio":5.0}}
+                                             "vel_ratio":4.0,"acc_ratio":8.0}}
         self._send_traj(pub_data,idx,with_aux)
 
     def _send_slave_rpy_traj(self,via_pos,idx:int):
@@ -353,7 +358,7 @@ class RobotOperationManager:
 
     def _send_master_traj(self,via_pos,idx:int,with_aux:bool):
         pub_data = {"name":"motion","master":{"pos":[via_pos.tolist()],"relative":False,
-                                              "vel_ratio":3.0,"acc_ratio":5.0}}
+                                              "vel_ratio":3.0,"acc_ratio":6.0}}
         self._send_traj(pub_data,idx,with_aux)
 
     def _send_traj(self,pub_data,idx:int,with_aux:bool):
@@ -366,6 +371,13 @@ class RobotOperationManager:
         if with_aux:
             self.mqtt_client.pub_request_robot(json.dumps({"name":"auxiliary_joint"}))
             time.sleep(1)
+
+    def _save_data(self,data,filename):
+        t = time.strftime('%Y-%m%d-%H%M%S',time.localtime())
+        file = './data/'+filename+'_'+t+'.txt'
+        np.savetxt(file,data,delimiter=' ',fmt='%.8f')
+        print('save data successfully!')
+
 
 
 def analy_calib_ratio_data(tdata,midx:int,aidx:int):
@@ -475,9 +487,9 @@ def analy_backlash_rot_data(vdata):
     print(f'maximum alpha backlash is {alpha_backlash.max():.6f}deg')
     print(f'maximum beta backlash is {beta_backlash.max():.6f}deg')
 
-def analy_backlash_joint_data(tdata,midx:int,aidx:int,jtype):
-    unit = 'mm' if jtype=='prismatic' else 'deg'
-    unit_trans = 1000 if jtype=='prismatic' else R2D
+def analy_backlash_joint_data(tdata,midx:int,aidx:int,is_prismatic:bool):
+    unit = 'mm' if is_prismatic else 'deg'
+    unit_trans = 1000 if is_prismatic else R2D
     dis = []
     pos_motor = tdata[:,midx]
     pos_aux = tdata[:,aidx]
@@ -495,12 +507,12 @@ def analy_backlash_rot_file(filename):
     analy_backlash_rot_data(data_set)
     plt.show()
 
-def analy_backlash_joint_file(filename,midx:int,aidx:int,jtype='prismatic'):
+def analy_backlash_joint_file(filename,midx:int,aidx:int,is_prismatic:bool):
     if isinstance(filename,str):
         tdata = np.loadtxt(filename)
     elif isinstance(filename,list):
         tdata = np.vstack([np.loadtxt(file) for file in filename])
-    analy_backlash_joint_data(tdata,midx,aidx,jtype)
+    analy_backlash_joint_data(tdata,midx,aidx,is_prismatic)
 
 def calib_gear_ratio():
     # rom = RobotOperationManager('192.168.2.242')
@@ -509,17 +521,19 @@ def calib_gear_ratio():
     analy_calib_ratio_file('./data/calibrate_master_ratio2_2024-0911-134608.txt',midx=7,aidx=15)
 
 def calib_rot_params():
-    rom = RobotOperationManager('192.168.2.242')
+    # rom = RobotOperationManager('192.168.2.242')
     # for _ in range(10):
         # rpy_data = rom.sample_random_rot()
     # analy_concentric_rot_file('./data/sample_roterr_data_2024-0717-102958.txt')
+    analy_random_rot_file('./data/4#robot/sample_random_rot_2024-1108-125320.txt')
 
 def calib_backlash():
-    # rom = RobotOperationManager('192.168.2.242')
-    # rom.sample_backlash_slave(4)
+    rom = RobotOperationManager('192.168.2.242')
+    rom.sample_backlash_slave(4,is_prismatic=True,sort=True)
     # rom.sample_backlash_master(0,jtype='rotary')
     # rom.sample_backlash_rot()
-    analy_backlash_joint_file('./data/sample_backlash_master1_2024-0912-151624.txt',midx=6,aidx=14,jtype='rotary')
+    # analy_backlash_joint_file('./data/sample_backlash_slave1_2024-0912-134107.txt',
+    #                           midx=1,aidx=9,is_prismatic=True)
     # analy_backlash_rot_file(['./data/sample_backlash_rot2024-0913-093650.txt',
     #                        './data/sample_backlash_rot_2024-0913-094411.txt'])
     # analy_backlash_rot_file(['./data/sample_repeaterr_data_2024-0729-183225.txt',
@@ -535,5 +549,8 @@ def calib_backlash():
 
 if __name__=='__main__':
     # calib_gear_ratio()
-    calib_backlash()
-    # calib_rot_params()
+    # calib_backlash()
+    calib_rot_params()
+    # rom = RobotOperationManager('192.168.2.242')
+    # rom.sample_random_rot()
+    # rom.run_random_joint()
