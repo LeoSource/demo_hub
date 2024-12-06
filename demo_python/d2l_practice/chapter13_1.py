@@ -107,6 +107,11 @@ def train_with_data_aug(train_augs, test_augs, net, lr=0.001):
     train_ch13(net, train_iter, test_iter, loss, trainer, 10, devices)
 
 
+
+
+
+batch_size, devices, net = 256, try_all_gpus(), resnet18(10, 3)
+
 if __name__ == '__main__':
     # test_apply()
 
@@ -123,7 +128,6 @@ if __name__ == '__main__':
     test_augs = torchvision.transforms.Compose([
         torchvision.transforms.ToTensor()])
 
-    batch_size, devices, net = 256, try_all_gpus(), resnet18(10, 3)
 
     def init_weights(m):
         if type(m) in [nn.Linear, nn.Conv2d]:
