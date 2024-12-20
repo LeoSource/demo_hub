@@ -11,7 +11,7 @@
       - [1.2.3 高斯-牛顿法](#123-高斯-牛顿法)
       - [1.2.4 LM算法](#124-lm算法)
       - [1.2.5 总结](#125-总结)
-    - [1.3 矩阵/向量求导等运算规则](#13-矩阵向量求导等运算规则)
+    - [1.3 矩阵/向量求导等运算规则](#13-矩阵向量求导等运算规则45)
   - [2. 运动学(Kinematics)](#2-运动学kinematics)
     - [2.1 标准/改进DH法，正逆运动学：解析解/数值解](#21-标准改进dh法正逆运动学解析解数值解)
     - [2.2 雅可比矩阵：Jaco_rpy,Jaco_euler,Jaco之间的关系](#22-雅可比矩阵jaco_rpyjaco_eulerjaco之间的关系)
@@ -137,7 +137,42 @@ $$\begin{aligned}
 [^2]: [最优化方法总结——梯度下降法、最速下降法、牛顿法、高斯牛顿法、LM法、拟牛顿法](https://blog.csdn.net/dongke1991/article/details/127981561)
 [^3]: [Levenberg-Marquardt算法(LM)的前世今生](https://blog.csdn.net/qq_43349296/article/details/143635708)
 
-### 1.3 矩阵/向量求导等运算规则
+
+### 1.3 矩阵/向量求导等运算规则[^4][^5]
+**梯度(Gradient)**：设$f(x)$是一个变量为x的标量函数，其中$\mathbf{x}=[x_1,x_2,...,x_n]^T$，那么定义$f(x)$对x的梯度为
+$$\frac{\partial f}{\partial \mathbf{x}} = [\frac{\partial f}{\partial x_1},\frac{\partial f}{\partial x_2},...,\frac{\partial f}{\partial x_n}]^T$$
+
+**雅可比矩阵(Jacobian matrix)**：设$\mathbf{f(\mathbf{x})}$是一个k×1的列向量函数$\mathbf{f(\mathbf{x})} = [f_1(\mathbf{x}),...,f_k(\mathbf{x})]^T$，那么定义$\mathbf{f(\mathbf{x})}$对x的雅可比矩阵为
+$$\frac{\partial \mathbf{f}}{\partial \mathbf{x}^T} = \mathbf{J}(\mathbf{x}) = \begin{bmatrix}
+\frac{\partial f_1}{\partial x_1} & \cdots & \frac{\partial f_1}{\partial x_n}\\
+\vdots & \ddots & \vdots\\
+\frac{\partial f_k}{\partial x_1} & \cdots & \frac{\partial f_k}{\partial x_n}\\
+\end{bmatrix}$$
+
+**Hessian矩阵(Hessian matrix)**：设$f(\mathbf{x})$是一个二阶可微的标量函数，那么定义$f(\mathbf{x})$对x的Hessian矩阵为
+$$\frac{\partial^2f(x)}{\partial x\partial x^T} = \begin{bmatrix}
+\frac{\partial^2 f(x)}{\partial x_1^2} & \cdots & \frac{\partial^2 f(x)}{\partial x_1\partial x_n}\\
+\vdots & \ddots & \vdots\\
+\frac{\partial^2 f(x)}{\partial x_n\partial x_1} & \cdots & \frac{\partial^2 f(x)}{\partial x_n^2}\\
+\end{bmatrix}$$
+
+**常用的矩阵求导公式**：
+$$
+\frac{\partial(\mathbf{x}^T\mathbf{a})}{\partial \mathbf{x}} = \frac{\partial(\mathbf{a}^T\mathbf{x})}{\partial \mathbf{x}} = \mathbf{a} \\
+\frac{\partial(\mathbf{x}^T\mathbf{x})}{\partial \mathbf{x}} = 2\mathbf{x} \\ 
+\frac{\partial(\mathbf{x}^T\mathbf{A}\mathbf{x})}{\partial \mathbf{x}} = \mathbf{A}\mathbf{x}+\mathbf{A}^T\mathbf{x} \\
+\frac{\partial(\mathbf{a}^T\mathbf{x}\mathbf{x}^T\mathbf{b})}{\partial \mathbf{x}} = \mathbf{a}\mathbf{b}^T\mathbf{x}+\mathbf{b}\mathbf{a}^T\mathbf{x}
+$$
+上式中，$\mathbf{a},\mathbf{b}$为常数列向量，$\mathbf{x}$为列向量变量
+$$
+\frac{\partial x^T}{\partial x} = I, \frac{\partial x}{\partial x^T} = I, \frac{\partial(x^TA)}{\partial x} = A \\
+\frac{\partial(Ax)}{\partial x^T} = A, \frac{\partial(Ax)}{\partial x} = A^T, \frac{\partial(x^TA)}{\partial x^T} = A^T
+$$
+上式中，A为m×n矩阵，x为n×1的列向量
+
+
+[^4]: [矩阵求导——基础篇](https://zhuanlan.zhihu.com/p/273729929)
+[^5]: [矩阵求导相关公式汇总](https://blog.csdn.net/qq_39463175/article/details/121695202)
 
 ---
 <!-- pagebreak -->
