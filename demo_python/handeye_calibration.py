@@ -93,7 +93,7 @@ def calibrate_handtoeye():
 
 if __name__ == '__main__':
     # calibrate_handineye()
-    # calibrate_handtoeye()
+    calibrate_handtoeye()
     r1 = smb.rpy2r([1,2,3])
     r2 = np.array([[1,0,0],[0,1,0],[0,0,1]])
     r3 = r1*r2
