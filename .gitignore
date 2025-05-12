@@ -32,3 +32,8 @@ demo_gtest/build/
 demo_xenomai/build
 
 demo_ros_controllers/build
+
+_deps/
+build/
+log/
+.vscode/

@@ -1,0 +1,58 @@
+cmake_minimum_required(VERSION 3.25)
+
+project(demo_mc LANGUAGES C CXX)
+
+set(CMAKE_BUILD_TYPE Release)
+set(FETCHCONTENT_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/_deps)
+set(MC3TH_DOWNLOAD_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/_deps)
+set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
+set(MC3TH_INSTALL_PREFIX mc3th)
+set(MC_BUILD_TESTS OFF)
+set(BUILD_MARCH_NATIVE OFF)
+
+# Set cmake path
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
+# Some option
+add_definitions(-DEIGEN_DEFAULT_ALIGN_BYTES=64 -DEIGEN_MALLOC_ALREADY_ALIGNED=0)
+
+# Some necessary settings
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+
+if(BUILD_MARCH_NATIVE)
+  set(MARCH_NATIVE_OPTIONS "-march=native;-mtune=native")
+  if(DEFINED ENV{AGIBOT_NATIVE_OPTIONS})
+    set(MARCH_NATIVE_OPTIONS $ENV{AGIBOT_NATIVE_OPTIONS})
+  endif()
+  message(STATUS "BUILD ${CUR_TARGET_NAME} OPTIONS: ${MARCH_NATIVE_OPTIONS}")
+  add_compile_options(${MARCH_NATIVE_OPTIONS})
+endif()
+
+add_compile_options(-Wreturn-type)
+add_compile_options(-w)
+add_compile_options(-Wno-note)
+
+include(GetMC3Th)
+
+add_subdirectory(src)
+
+# # Install
+# install(
+#   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake
+#   DESTINATION ./
+#   FILES_MATCHING
+#   PATTERN "*.cmake")
+
+# # install
+# set(CUR_INSTALL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/install_cfg)
+
+# install(
+#   DIRECTORY ${CUR_INSTALL_SOURCE_DIR}/bin ${CUR_INSTALL_SOURCE_DIR}/configuration
+#   DESTINATION ./
+#   USE_SOURCE_PERMISSIONS)
