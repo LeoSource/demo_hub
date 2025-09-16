@@ -26,6 +26,8 @@ demo_python/.vscode/
 demo_python/data/
 demo_python/*.mha
 demo_python/.venv/
+demo_python/arm_dynamics/SymPyBotics/
+system_identification/
 
 demo_gtest/build/
 

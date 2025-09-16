@@ -9,15 +9,13 @@ from scipy.linalg import svd
 from numpy.linalg import qr, matrix_rank, norm
 import time
 import matplotlib.pyplot as plt
-from tqdm import tqdm
-import math
 
 class ArmDynamicsWrapper:
     def __init__(self, arm_name:str):
         if arm_name=='left':
-            self.model, self.geom_model, data, geom_data, urdf_file, robot = load_a2_t2d0_flagship_left_serial_arm(verbose=False)
+            self.model, self.geom_model, self.data, self.geom_data, urdf_file, robot = load_a2_t2d0_flagship_left_serial_arm(verbose=False)
         elif arm_name=='right':
-            self.model, self.geom_model, data, geom_data, urdf_file, robot = load_a2_t2d0_flagship_right_serial_arm(verbose=False)
+            self.model, self.geom_model, self.data, self.geom_data, urdf_file, robot = load_a2_t2d0_flagship_right_serial_arm(verbose=False)
         else:
             print('wrong arm name!')
 
@@ -116,11 +114,19 @@ class ArmDynamicsWrapper:
         return self.model.lowerPositionLimit
 
     def computeCollisions(self,q):
-        pin.updateGeometryPlacements(self.model, self.model.createData(), self.geom_model, self.geom_model.createData(), q)
-        return pin.computeCollisions(self.model, self.model.createData(), self.geom_model, self.geom_model.createData(), q, True)
+        pin.updateGeometryPlacements(self.model, self.data, self.geom_model, self.geom_data, q)
+        return pin.computeCollisions(self.model, self.data, self.geom_model, self.geom_data, q, True)
+    
+    def get_collision_distances(self,q):
+        pin.updateGeometryPlacements(self.model, self.data, self.geom_model, self.geom_data, q)
+        pin.computeDistances(self.model, self.data, self.geom_model, self.geom_data, q)
+        distances = []
+        for dr in self.geom_data.distanceResults:
+            distances.append(dr.min_distance)
+        return np.array(distances)
 
     def rnea(self, q, qd, qdd):
-        return pin.rnea(self.model, self.model.createData(), q, qd, qdd)
+        return pin.rnea(self.model, self.data, q, qd, qdd)
 
 
 class FourierTrajectory:
@@ -170,8 +176,10 @@ class TrajectoryOptimizer:
         self.robot = robot
         self.robot.get_dyn_params_dep1()
         self.robot.get_dyn_params_dep()
+        np.savetxt(f'right_dynamics_index.csv', self.robot.dyn_idx, delimiter=',', fmt='%d')
         self.fourier_traj = FourierTrajectory(dof=robot.model.nq,order=order,w0=w0)
         self.num_pts = num_pts
+        self.time_samples = np.linspace(0, 10, num_pts)
         self.qmax = q_limit[0]
         self.qmin = q_limit[1]
         self.qdmax = q_limit[2]
@@ -181,8 +189,7 @@ class TrajectoryOptimizer:
 
 
     def obj_function(self, x):
-        time_samples = np.linspace(0, 10, self.num_pts)
-        q,qd,qdd = self.fourier_traj.generate_traj(x,time_samples)
+        q,qd,qdd = self.fourier_traj.generate_traj(x,self.time_samples)
 
         obj_mat = []
         for idx in range(self.num_pts):
@@ -200,10 +207,16 @@ class TrajectoryOptimizer:
             # 如果矩阵奇异，返回一个大的值
             return 1e10
 
+    def obj_function_soft_constraint(self,x):
+        cond = self.obj_function(x)
+        c = self.collision_constraint(x)
+        min_dist = np.min(c)
+        penalty = np.exp(-min_dist) if min_dist<0 else 0
+        return cond+1e4*penalty
+
     def kinematics_nonlin_constraints(self, x):
         # 位置、速度、加速度上下限
-        time_samples = np.linspace(0, 10, self.num_pts)
-        q,qd,qdd = self.fourier_traj.generate_traj(x,time_samples)
+        q,qd,qdd = self.fourier_traj.generate_traj(x,self.time_samples)
 
         conqmax = []
         conqmin = []
@@ -228,13 +241,24 @@ class TrajectoryOptimizer:
         return ceq
 
     def collision_constraint(self,x):
-        pass
+        q,_,_ = self.fourier_traj.generate_traj(x, self.time_samples)
+        distances = []
+        safety_margin = 0.02
+        for idx in  range(self.num_pts):
+            dist = self.robot.get_collision_distances(q[idx])
+            distances.append(dist - safety_margin)
+        c = np.array(distances).flatten()
+        return c
 
     def start_optimize(self):
-        nj = self.robot.model.nq
         nparams = self.fourier_traj.nparams
         x_init = 0.5*(2*np.random.rand(nparams) - np.ones(nparams))
             
+        # 设置优化选项
+        options = {
+            'maxiter': 15000,
+            'disp': True
+        }
         # 定义等式约束
         constraints = []
         constraints.append({
@@ -247,24 +271,29 @@ class TrajectoryOptimizer:
             'type': 'ineq',
             'fun': self.kinematics_nonlin_constraints
         })
-        
-        # 设置优化选项
-        options = {
-            'maxiter': 15000,
-            'disp': True
-        }
-        
-        # 执行优化
         result = minimize(
-            fun=self.obj_function,
+            fun=self.obj_function_soft_constraint,
             x0=x_init,
             method='SLSQP',
             constraints=constraints,
             options=options
         )
 
-        return result
+        constraints.append({
+            'type': 'ineq',
+            'fun': self.collision_constraint
+        })
+        
+        # 执行优化
+        # result = minimize(
+        #     fun=self.obj_function,
+        #     x0=result.x,
+        #     method='SLSQP',
+        #     constraints=constraints,
+        #     options=options
+        # )
 
+        return result
 
 def generate_optimal_traj(arm_name):
     model = ArmDynamicsWrapper(arm_name)
@@ -275,7 +304,7 @@ def generate_optimal_traj(arm_name):
     qddmax = np.array([np.pi, np.pi, np.pi, np.pi, np.pi])
     qddmin = -qddmax
     qlimit = [qmax,qmin,qdmax,qdmin,qddmax,qddmin]
-    order_list = [3, 5]
+    order_list = [5, 5]
     w0 = 2*np.pi*0.1
     opt_pts = 100
     for order in order_list:
@@ -287,43 +316,55 @@ def generate_optimal_traj(arm_name):
 
 def validate_fourier_params(arm_name, params_folder):
     model = ArmDynamicsWrapper(arm_name)
-    order_3_files = []
-    order_5_files = []
+    order3_files = []
+    order5_files = []
     for filename in os.listdir(params_folder):
         parts = filename.split('_')
         if len(parts)>=5 and parts[2]=='order':
             order = parts[3]
             file_path = os.path.join(params_folder, filename)
             if order=='3':
-                order_3_files.append(file_path)
+                order3_files.append(file_path)
             elif order=='5':
-                order_5_files.append(file_path)
+                order5_files.append(file_path)
+
+    def get_file_index(file_path):
+        filename = os.path.basename(file_path)
+        name = os.path.splitext(filename)[0]
+        return int(name.split('_')[-1])
+
+    order3_files.sort(key=get_file_index)
+    order5_files.sort(key=get_file_index)
 
     dof = 5
     t = np.linspace(0, 10, 2000)
     valid_idx = []
-    for file_idx,params_file in enumerate(order_3_files):
+    for file_idx,params_file in enumerate(order3_files):
         params = np.loadtxt(params_file, delimiter=',')
         fourier_traj = FourierTrajectory(dof=dof,order=3,w0=2*np.pi*0.1)
         q, _, _ = fourier_traj.generate_traj(params, t)
+        collision_found = False
         for idx in range(q.shape[0]):
-            collision = model.computeCollisions(q[idx])
-            if collision:
+            if model.computeCollisions(q[idx]):
+                collision_found = True
                 break
-        valid_idx.append(file_idx)
+        if not collision_found:
+            valid_idx.append(file_idx)
     print(f'valid fourier parameters file of order 3 is: ')
     print(valid_idx)
 
     valid_idx.clear()
-    for file_idx,params_file in enumerate(order_5_files):
+    for file_idx,params_file in enumerate(order5_files):
         params = np.loadtxt(params_file, delimiter=',')
         fourier_traj = FourierTrajectory(dof=dof,order=5,w0=2*np.pi*0.1)
         q, _, _ = fourier_traj.generate_traj(params, t)
+        collision_found = False
         for idx in range(q.shape[0]):
-            collision = model.computeCollisions(q[idx])
-            if collision:
+            if model.computeCollisions(q[idx]):
+                collision_found = True
                 break
-        valid_idx.append(file_idx)
+        if not collision_found:
+            valid_idx.append(file_idx)
     print(f'valid fourier parameters file of order 5 is: ')
     print(valid_idx)
 
@@ -390,9 +431,9 @@ def test_min_regressor():
     
 if __name__ == "__main__":
     # test_min_regressor()
-    # generate_optimal_traj('right')
+    generate_optimal_traj('right')
     # visualize('./left_fourier_params/fourier_params_order_3_1.csv')
-    validate_fourier_params('right','./right_fourier_params')
+    validate_fourier_params('left','./left_fourier_params')
 
 
 
